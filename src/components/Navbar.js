@@ -146,7 +146,7 @@ function Navbar() {
             )}
             {userInfo && userInfo.isSeller && (
               <li className="menu-item">
-                <a href="/productlist" onClick={sidebarClose} ref={menuLink} className="menu-link">
+                <a href="/search/name/" onClick={sidebarClose} ref={menuLink} className="menu-link">
                   Products
                 </a>
               </li>
