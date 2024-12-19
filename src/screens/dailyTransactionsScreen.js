@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from './api';
 import { useSelector } from 'react-redux';
 
+
 const ErrorModal = ({ message, onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
     <div className="bg-white rounded-lg p-4 shadow-lg relative w-11/12 max-w-sm">
@@ -85,6 +86,55 @@ const DailyTransactions = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+
+
+  // Inside the DailyTransactions component, add the handler function first
+  const handleGenerateReport = async () => {
+    try {
+      // Prepare the current filters and sorting options
+      const reportParams = {
+        fromDate,
+        toDate,
+        activeTab,
+        filterCategory,
+        filterMethod,
+        searchQuery,
+        sortOption,
+      };
+  
+      // Prepare the data to send (allTransactions already reflects current filters/sorts)
+      const reportData = allTransactions;
+  
+      // Send a POST request to the backend to generate the report
+      const response = await api.post(
+        '/api/print/daily/generate-report',
+        { reportData, reportParams },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          responseType: 'text', // Expecting HTML content as text
+        }
+      );
+  
+      // Open a new popup window
+      const reportWindow = window.open('', '_blank', 'width=1200,height=800');
+  
+      if (reportWindow) {
+        // Write the received HTML content into the popup window
+        reportWindow.document.write(response.data);
+        reportWindow.document.close();
+      } else {
+        setError('Unable to open popup window. Please allow popups for this website.');
+      }
+    } catch (err) {
+      setError('Failed to generate report.');
+      console.error(err);
+    }
+  };
+  
+  
   
   
 
@@ -121,6 +171,7 @@ const DailyTransactions = () => {
         return (customer.payments || []).map((p, index) => ({
           ...p,
           source: 'customerPayment',
+          paymentFrom: customer.customerName,
           _id: p._id || `customer-payment-${index}`,
         }));
       }));
@@ -134,6 +185,7 @@ const DailyTransactions = () => {
           (seller.payments || []).map((p, index) => ({
             ...p,
             source: 'purchasePayment',
+            sellerName: seller.sellerName,
             _id: p._id || `purchase-${seller.sellerId}-${index}`,
           }))
         )
@@ -143,6 +195,7 @@ const DailyTransactions = () => {
           (transport.payments || []).map((p, index) => ({
             ...p,
             source: 'transportPayment',
+            transportName: transport.transportName,
             _id: p._id || `transport-${transport.transportId}-${index}`,
           }))
         )
@@ -435,7 +488,7 @@ const DailyTransactions = () => {
       pPayments = purchasePayments.map((payment) => ({
         ...payment,
         type: 'out',
-        paymentTo: payment.paidTo || 'Vendor',
+        paymentTo: payment.sellerName || 'Vendor',
         category: payment.category || 'Purchase Payment',
         method: payment.method || 'cash',
         remark: payment.remark || 'Payment towards purchase',
@@ -448,7 +501,7 @@ const DailyTransactions = () => {
       tPayments = transportPayments.map((payment) => ({
         ...payment,
         type: 'out',
-        paymentTo: payment.paidTo || 'Transporter',
+        paymentTo: payment.transportName || 'Transporter',
         category: payment.category || 'Transport Payment',
         method: payment.method || 'cash',
         remark: payment.remark || 'Payment towards transport',
@@ -709,7 +762,7 @@ const DailyTransactions = () => {
                   const isDaily = trans.source === 'daily'; // only daily transactions can be deleted
                   return (
                     <div
-                      key={trans._id || `trans-${index}`}
+                      key={index}
                       className="flex justify-between items-center p-2 bg-white shadow-sm rounded-lg"
                     >
                       <div>
@@ -794,6 +847,16 @@ const DailyTransactions = () => {
         >
           -
         </button>
+
+          {/* New Generate Report Button */}
+  <button
+    onClick={handleGenerateReport}
+    className="flex font-bold items-center justify-center bg-purple-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-purple-600 transition"
+    title="Generate Report"
+  >
+    <i className="fa fa-file-pdf-o"></i>
+  </button>
+
       </div>
 
       {/* Add Transaction Modal */}

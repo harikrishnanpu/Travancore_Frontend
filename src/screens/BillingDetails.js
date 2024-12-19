@@ -378,6 +378,88 @@ const BillingList = () => {
   };
 
 
+  const renderCard = (billing) => (
+    <div
+      key={billing.invoiceNo}
+      className="bg-white rounded-lg shadow-md p-6 mb-4 transition-transform transform hover:scale-100 duration-200"
+    >
+      <div className="flex justify-between items-center">
+        <p
+          onClick={() => navigate(`/driver/${billing._id}`)}
+          className={`text-md flex cursor-pointer font-bold ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
+        >
+          {billing.invoiceNo} {billing.isApproved && <img className='h-4 w-4 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
+        </p>
+        <div className="flex items-center">
+          {renderStatusIndicator(billing)}
+        </div>
+      </div>
+      <p className="text-gray-600 text-xs mt-2">Customer: {billing.customerName}</p>
+      <p className="text-gray-600 text-xs mt-1">Salesman: {billing.salesmanName}</p>
+      <p className="text-gray-600 text-xs mt-1">
+        Expected Delivery:{' '}
+        {new Date(billing.expectedDeliveryDate).toLocaleDateString()}
+      </p>
+      <div className="flex justify-between">
+        <p className="text-gray-600 text-xs font-bold mt-1">
+          Total Products: {billing.products.length}
+        </p>
+        <p className="text-gray-400 italic text-xs mt-1">
+          Last Edited:{' '}
+          {new Date(billing.updatedAt ? billing.updatedAt : billing.createdAt).toLocaleDateString()}
+        </p>
+      </div>
+      <div className="flex mt-4 text-xs space-x-2">
+        <button
+          disabled={!userInfo.isAdmin && billing.isApproved}
+          onClick={() => navigate(`/bills/edit/${billing._id}`)}
+          className={`${billing.isApproved && !userInfo.isAdmin ? 'bg-gray-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'} text-white px-3 font-bold py-1 rounded flex items-center`}
+        >
+          <i className="fa fa-pen mr-2"></i> Edit
+        </button>
+        {userInfo.isAdmin && (
+          <button
+            onClick={() => generatePDF(billing)}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
+          >
+            <i className="fa fa-truck mr-2"></i>
+          </button>
+        )}
+        <button
+          onClick={() => handleView(billing)}
+          className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
+        >
+          <i className="fa fa-eye mr-2"></i> View
+        </button>
+        <button
+          onClick={() => handleRemove(billing._id)}
+          className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
+        >
+          <i className="fa fa-trash mr-2"></i> 
+        </button>
+        {userInfo.isAdmin && (
+          <>
+            <button
+              onClick={() => printInvoice(billing)}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
+            >
+              <i className="fa fa-print mr-2"></i>
+            </button>
+            {!billing.isApproved && (
+              <button
+                onClick={() => handleApprove(billing)}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 font-bold py-1 rounded flex items-center"
+              >
+                Approve
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+
   const renderStatusIndicator = (billing) => {
     const { deliveryStatus, paymentStatus } = billing;
     let color = 'red';
@@ -843,116 +925,7 @@ const BillingList = () => {
 
           {/* Card view for small screens */}
           <div className="md:hidden">
-            {paginatedBillings.map((billing) => (
-              <div
-                key={billing._id}
-                className="bg-white rounded-lg shadow-md p-4 mb-4"
-              >
-                <div className="flex justify-between items-center">
-                  <p
-                    onClick={() => navigate(`/driver/${billing._id}`)}
-                    className={`text-sm font-bold cursor-pointer flex items-center space-x-1 ${
-                      billing.isApproved ? 'text-gray-800' : 'text-red-600'
-                    }`}
-                  >
-                    <FaUser className="text-red-600" />
-                    <span>
-                      {billing.invoiceNo} {!billing.isApproved && <span className="text-xs text-red-600 ml-1">(Draft)</span>}
-                    </span>
-                  </p>
-                </div>
-                <div className="mt-2">
-                  <p className="text-gray-600 text-xs flex items-center space-x-1">
-                    <FaUser className="text-gray-400" />
-                    <span>Customer: {billing.customerName}</span>
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    Payment:{' '}
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        billing.paymentStatus === 'Paid'
-                          ? 'bg-green-500 text-white'
-                          : billing.paymentStatus === 'Partial'
-                            ? 'bg-yellow-500 text-white'
-                            : 'bg-red-500 text-white'
-                      }`}
-                    >
-                      {billing.paymentStatus}
-                    </span>
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    Delivery:{' '}
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        billing.deliveryStatus === 'Delivered'
-                          ? 'bg-green-500 text-white'
-                          : billing.deliveryStatus === 'Partially Delivered'
-                            ? 'bg-yellow-500 text-white'
-                            : 'bg-red-500 text-white'
-                      }`}
-                    >
-                      {billing.deliveryStatus}
-                    </span>
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1">Amount: Rs. {billing.grandTotal.toFixed(2)}</p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    Invoice Date: {new Date(billing.invoiceDate).toLocaleString()}
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    Expected Delivery: {new Date(billing.expectedDeliveryDate).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="flex mt-4 flex-wrap gap-2 text-xs">
-                  {(userInfo.isAdmin || !billing.isApproved) && (
-                    <button
-                      onClick={() => navigate(`/bills/edit/${billing._id}`)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 font-bold py-1 rounded"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {userInfo.isAdmin && (
-                    <button
-                      onClick={() => generatePDF(billing)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 font-bold py-1 rounded"
-                    >
-                      PDF
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleView(billing)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 font-bold py-1 rounded"
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => handleRemove(billing._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 font-bold py-1 rounded"
-                  >
-                    Delete
-                  </button>
-                  {userInfo.isAdmin && (
-                    <>
-                      <button
-                        onClick={() => printInvoice(billing)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 font-bold py-1 rounded"
-                      >
-                        Print
-                      </button>
-                      {!billing.isApproved && (
-                        <button
-                          onClick={() => handleApprove(billing)}
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 font-bold py-1 rounded"
-                        >
-                          Approve
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
+          {paginatedBillings.map(renderCard)}
           </div>
 
           {/* Pagination */}
