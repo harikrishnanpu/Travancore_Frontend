@@ -21,37 +21,36 @@ export default function HomeScreen() {
     async function fetchData() {
       setLoading(true);
 
-      if (localStorage.getItem('faceId')) {
-        navigate('/');
-      }
-
       if (!userInfo) {
         navigate('/signin');
       }
 
       try {
-        const FoundFaceData = await api.get(`/api/users/get-face-data/${userInfo?._id}`);
 
-        if (FoundFaceData) {
-          if (!FoundFaceData.data.isSeller) {
-            setIsPendingApproval(true);
-          } else {
-            if (userInfo.isSeller) {
-              setIsPendingApproval(false);
+        if(userInfo){
+          const FoundFaceData = await api.get(`/api/users/get-face-data/${userInfo._id}`);
+          
+          if (FoundFaceData) {
+            if (!FoundFaceData.data.isSeller) {
+              setIsPendingApproval(true);
             } else {
-              setSellerStatusModal(true);
+              if (userInfo.isSeller) {
+                setIsPendingApproval(false);
+              } else {
+                setSellerStatusModal(true);
+              }
             }
+            
           }
-
-          if (FoundFaceData.data.faceDescriptor?.length !== 0) {
-            if (!localStorage.getItem('faceId')) {
-              // navigate('/face-id?ref=login');
-            } else {
-              setLoading(false);
-            }
-          } else {
-            navigate('/face-id?ref=new');
-          }
+          // if (FoundFaceData.data.faceDescriptor?.length !== 0) {
+          //   if (!localStorage.getItem('faceId')) {
+          //     // navigate('/face-id?ref=login');
+          //   } else {
+          //     setLoading(false);
+          //   }
+          // } else {
+          //   navigate('/face-id?ref=new');
+          // }
         }
       } catch (error) {
         localStorage.clear();
