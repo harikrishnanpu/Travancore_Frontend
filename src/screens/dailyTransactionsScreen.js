@@ -851,7 +851,7 @@ const DailyTransactions = () => {
           {/* New Generate Report Button */}
   <button
     onClick={handleGenerateReport}
-    className="flex font-bold items-center justify-center bg-purple-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-purple-600 transition"
+    className="flex font-bold items-center justify-center bg-red-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-red-600 transition"
     title="Generate Report"
   >
     <i className="fa fa-file-pdf-o"></i>
