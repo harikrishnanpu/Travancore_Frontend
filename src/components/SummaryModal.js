@@ -44,7 +44,7 @@ export default function SummaryModal({
   changeRef,
   receivedAmountRef,
 }) {
-  const remainingAmount = (parseFloat(parseFloat(totalAmount) - discount) - parseFloat(receivedAmount)).toFixed(2);
+  const remainingAmount = (parseFloat(parseFloat(grandTotal)) - parseFloat(receivedAmount)).toFixed(2);
 
   const userSignin = useSelector((state) => state.userSignin);
   const { userInfo } = userSignin;
@@ -53,7 +53,7 @@ export default function SummaryModal({
 
   useEffect(()=>{
     setFetchedReceivedAmount(receivedAmount);
-    setFetchedRemainingAmount((parseFloat(parseFloat(totalAmount) - discount) - parseFloat(receivedAmount)).toFixed(2));
+    setFetchedRemainingAmount((parseFloat(parseFloat(grandTotal)) - parseFloat(receivedAmount)).toFixed(2));
   },[discount])
 
 
@@ -116,7 +116,7 @@ export default function SummaryModal({
               value={receivedAmount || 0}
               onKeyDown={(e)=> changeRef(e, paymentMethodRef)}
               onChange={(e) =>
-                setReceivedAmount(Math.min(parseFloat(e.target.value) || 0, parseFloat(fetchedRemainingAmount)))
+                setReceivedAmount(Math.min(parseFloat(e.target.value) || 0, parseFloat(grandTotal)))
               }
               className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
             />

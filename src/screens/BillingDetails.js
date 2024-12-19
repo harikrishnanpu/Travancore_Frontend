@@ -17,7 +17,7 @@ const BillingList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  // Search, Filter, and Sort States
+  // Sidebar (Search, Filter, Sort) States
   const [searchTerm, setSearchTerm] = useState('');
   const [approvalFilter, setApprovalFilter] = useState('All');
   const [deliveryFilter, setDeliveryFilter] = useState('All');
@@ -28,6 +28,9 @@ const BillingList = () => {
   const [deliveryEndDate, setDeliveryEndDate] = useState('');
   const [sortField, setSortField] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+
+  // Sidebar state for small screens
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const userSignin = useSelector((state) => state.userSignin);
   const { userInfo } = userSignin;
@@ -328,12 +331,12 @@ const BillingList = () => {
   const renderCard = (billing) => (
     <div
       key={billing.invoiceNo}
-      className="bg-white rounded-lg shadow-md p-6 mb-4 transition-transform transform hover:scale-100 duration-200"
+      className="bg-white rounded-lg shadow-md p-6 mb-4 transition-transform transform hover:scale-105 duration-200"
     >
       <div className="flex justify-between items-center">
         <p
           onClick={() => navigate(`/driver/${billing._id}`)}
-          className={`text-md flex cursor-pointer font-bold ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
+          className={`text-sm flex cursor-pointer font-semibold ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
         >
           {billing.invoiceNo} {billing.isApproved && <img className='h-4 w-4 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
         </p>
@@ -341,22 +344,20 @@ const BillingList = () => {
           {renderStatusIndicator(billing)}
         </div>
       </div>
-      <p className="text-gray-600 text-xs mt-2">Customer: {billing.customerName}</p>
-      <p className="text-gray-600 text-xs mt-1">Salesman: {billing.salesmanName}</p>
-      <p className="text-gray-600 text-xs mt-1">
-        Expected Delivery:{' '}
-        {new Date(billing.expectedDeliveryDate).toLocaleDateString()}
+      <p className="text-gray-600 text-sm mt-2">Customer: {billing.customerName}</p>
+      <p className="text-gray-600 text-sm mt-1">Salesman: {billing.salesmanName}</p>
+      <p className="text-gray-600 text-sm mt-1">
+        Expected Delivery: {new Date(billing.expectedDeliveryDate).toLocaleDateString()}
       </p>
       <div className="flex justify-between">
-        <p className="text-gray-600 text-xs font-bold mt-1">
+        <p className="text-gray-600 text-sm font-bold mt-1">
           Total Products: {billing.products.length}
         </p>
-        <p className="text-gray-400 italic text-xs mt-1">
-          Last Edited:{' '}
-          {new Date(billing.updatedAt ? billing.updatedAt : billing.createdAt).toLocaleDateString()}
+        <p className="text-gray-400 italic text-sm mt-1">
+          Last Edited: {new Date(billing.updatedAt ? billing.updatedAt : billing.createdAt).toLocaleDateString()}
         </p>
       </div>
-      <div className="flex mt-4 text-xs space-x-2">
+      <div className="flex mt-4 text-sm space-x-2">
         <button
           disabled={!userInfo.isAdmin && billing.isApproved}
           onClick={() => navigate(`/bills/edit/${billing._id}`)}
@@ -369,7 +370,7 @@ const BillingList = () => {
             onClick={() => generatePDF(billing)}
             className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
           >
-            <i className="fa fa-truck mr-2"></i> Generate PDF
+            <i className="fa fa-truck mr-2"></i>
           </button>
         )}
         <button
@@ -382,7 +383,7 @@ const BillingList = () => {
           onClick={() => handleRemove(billing._id)}
           className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
         >
-          <i className="fa fa-trash mr-2"></i> Delete
+          <i className="fa fa-trash mr-2"></i>
         </button>
         {userInfo.isAdmin && (
           <>
@@ -390,7 +391,7 @@ const BillingList = () => {
               onClick={() => printInvoice(billing)}
               className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
             >
-              <i className="fa fa-print mr-2"></i> Print
+              <i className="fa fa-print mr-2"></i>
             </button>
             {!billing.isApproved && (
               <button
@@ -411,7 +412,7 @@ const BillingList = () => {
     return (
       <table className="w-full text-sm text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
         <thead className="bg-gray-200">
-          <tr className="divide-y text-xs">
+          <tr className="divide-y text-sm">
             <th className="px-4 py-2 text-left">Status</th>
             <th className="px-2 py-2">Invoice No</th>
             <th className="px-2 py-2">Invoice Date</th>
@@ -463,24 +464,24 @@ const BillingList = () => {
           <Skeleton height={20} width={`60%`} />
           <Skeleton circle={true} height={12} width={12} />
         </div>
-        <p className="text-gray-600 text-xs mt-2">
+        <p className="text-gray-600 text-sm mt-2">
           <Skeleton height={10} width={`80%`} />
         </p>
-        <p className="text-gray-600 text-xs mt-1">
+        <p className="text-gray-600 text-sm mt-1">
           <Skeleton height={10} width={`70%`} />
         </p>
-        <p className="text-gray-600 text-xs mt-1">
+        <p className="text-gray-600 text-sm mt-1">
           <Skeleton height={10} width={`50%`} />
         </p>
         <div className="flex justify-between">
-          <p className="text-gray-600 text-xs font-bold mt-1">
+          <p className="text-gray-600 text-sm font-bold mt-1">
             <Skeleton height={10} width={`40%`} />
           </p>
-          <p className="text-gray-400 italic text-xs mt-1">
+          <p className="text-gray-400 italic text-sm mt-1">
             <Skeleton height={10} width={`30%`} />
           </p>
         </div>
-        <div className="flex mt-4 text-xs space-x-2">
+        <div className="flex mt-4 text-sm space-x-2">
           <Skeleton height={30} width={60} />
           <Skeleton height={30} width={60} />
           <Skeleton height={30} width={60} />
@@ -513,17 +514,17 @@ const BillingList = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative">
+      <div className="flex items-center justify-between bg-white shadow-md p-5 rounded-lg mb-4">
         <div
           onClick={() => navigate('/')}
           className="text-center cursor-pointer"
         >
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
-          <p className="text-gray-400 text-xs font-bold">
+          <h2 className="text-lg font-bold text-red-600">KK TRADING</h2>
+          <p className="text-gray-500 text-sm font-medium">
             All Billings Information And Updation
           </p>
         </div>
-        <i className="fa fa-list text-gray-500" />
+        <i className="fa fa-list text-gray-500 text-xl" />
       </div>
 
       {/* PDF Loading Spinner */}
@@ -531,21 +532,21 @@ const BillingList = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="flex flex-col items-center">
             <i className="fa fa-spinner fa-spin text-white text-4xl mb-4"></i>
-            <p className="text-white text-xs">Generating PDF...</p>
+            <p className="text-white text-sm">Generating PDF...</p>
           </div>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <p className="text-red-500 text-center mb-4 text-xs">{error}</p>
+        <p className="text-red-500 text-center mb-4 text-sm">{error}</p>
       )}
 
       {/* Submitted for Review Section */}
       {!userInfo.isAdmin && billings.filter(b => !b.isApproved && b.submittedBy === userInfo._id).length > 0 && (
         <div className="bg-yellow-100 rounded-md border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-          <p className="font-bold text-xs">Submitted for Review</p>
-          <p className="text-xs">
+          <p className="font-semibold text-sm">Submitted for Review</p>
+          <p className="text-sm">
             You have {billings.filter(b => !b.isApproved && b.submittedBy === userInfo._id).length} billing(s) awaiting approval.
           </p>
         </div>
@@ -553,41 +554,43 @@ const BillingList = () => {
 
       {userInfo.isAdmin && billings.filter(b => !b.isApproved).length > 0 && (
         <div className="bg-yellow-100 rounded-md border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-          <p className="font-bold text-xs">Submitted for Review</p>
-          <p className="text-xs">
+          <p className="font-semibold text-sm">Submitted for Review</p>
+          <p className="text-sm">
             {billings.filter(b => !b.isApproved).length} billing(s) awaiting approval.
           </p>
         </div>
       )}
 
-      {/* Search, Filter, and Sort Controls */}
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-4 md:space-y-0">
+      {/* Main Content */}
+      <div className="flex flex-col md:flex-row">
+        {/* Sidebar for Sorting, Filtering, Searching (Visible on large screens) */}
+        <div className="hidden md:block md:w-1/5 lg:w-1/6 bg-white p-4 rounded-lg shadow-md mr-4">
+          <h3 className="text-md font-semibold mb-3">Controls</h3>
           {/* Search Input */}
-          <div className="flex-1">
-            <label className="block text-xs font-bold mb-1" htmlFor="search">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="search">
               Search
             </label>
             <input
               type="text"
               id="search"
-              placeholder="Search by Invoice No, Customer, Salesman, etc."
+              placeholder="Invoice No, Customer, Salesman..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </div>
 
           {/* Approval Filter */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold mb-1" htmlFor="approvalFilter">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="approvalFilter">
               Approval Status
             </label>
             <select
               id="approvalFilter"
               value={approvalFilter}
               onChange={(e) => setApprovalFilter(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             >
               <option value="All">All</option>
               <option value="Approved">Approved</option>
@@ -596,15 +599,15 @@ const BillingList = () => {
           </div>
 
           {/* Delivery Status Filter */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold mb-1" htmlFor="deliveryFilter">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="deliveryFilter">
               Delivery Status
             </label>
             <select
               id="deliveryFilter"
               value={deliveryFilter}
               onChange={(e) => setDeliveryFilter(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             >
               <option value="All">All</option>
               <option value="Delivered">Delivered</option>
@@ -614,15 +617,15 @@ const BillingList = () => {
           </div>
 
           {/* Payment Status Filter */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold mb-1" htmlFor="paymentFilter">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="paymentFilter">
               Payment Status
             </label>
             <select
               id="paymentFilter"
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             >
               <option value="All">All</option>
               <option value="Paid">Paid</option>
@@ -630,12 +633,10 @@ const BillingList = () => {
               {/* Add more payment statuses as needed */}
             </select>
           </div>
-        </div>
 
-        <div className="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-4 md:space-y-0 mt-4">
           {/* Invoice Date Range Filter */}
-          <div className="flex-1">
-            <label className="block text-xs font-bold mb-1" htmlFor="invoiceStartDate">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="invoiceStartDate">
               Invoice Start Date
             </label>
             <input
@@ -643,12 +644,12 @@ const BillingList = () => {
               id="invoiceStartDate"
               value={invoiceStartDate}
               onChange={(e) => setInvoiceStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-bold mb-1" htmlFor="invoiceEndDate">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="invoiceEndDate">
               Invoice End Date
             </label>
             <input
@@ -656,13 +657,13 @@ const BillingList = () => {
               id="invoiceEndDate"
               value={invoiceEndDate}
               onChange={(e) => setInvoiceEndDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </div>
 
           {/* Expected Delivery Date Range Filter */}
-          <div className="flex-1">
-            <label className="block text-xs font-bold mb-1" htmlFor="deliveryStartDate">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="deliveryStartDate">
               Delivery Start Date
             </label>
             <input
@@ -670,12 +671,12 @@ const BillingList = () => {
               id="deliveryStartDate"
               value={deliveryStartDate}
               onChange={(e) => setDeliveryStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </div>
 
-          <div className="flex-1">
-            <label className="block text-xs font-bold mb-1" htmlFor="deliveryEndDate">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="deliveryEndDate">
               Delivery End Date
             </label>
             <input
@@ -683,324 +684,582 @@ const BillingList = () => {
               id="deliveryEndDate"
               value={deliveryEndDate}
               onChange={(e) => setDeliveryEndDate(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-xs"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </div>
 
           {/* Sort Options */}
-          <div className="w-full md:w-1/4">
-            <label className="block text-xs font-bold mb-1" htmlFor="sortField">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="sortField">
               Sort By
             </label>
+            <select
+              id="sortField"
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="">None</option>
+              <option value="invoiceNo">Invoice No</option>
+              <option value="invoiceDate">Invoice Date</option>
+              <option value="expectedDeliveryDate">Expected Delivery Date</option>
+              <option value="customerName">Customer Name</option>
+              <option value="salesmanName">Salesman Name</option>
+              <option value="billingAmount">Billing Amount</option>
+            </select>
+          </div>
+
+          {/* Sort Order */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1" htmlFor="sortOrder">
+              Order
+            </label>
             <div className="flex items-center space-x-2">
-              <select
-                id="sortField"
-                value={sortField}
-                onChange={(e) => setSortField(e.target.value)}
-                className="w-2/3 border border-gray-300 rounded px-3 py-2 text-xs"
-              >
-                <option value="">None</option>
-                <option value="invoiceNo">Invoice No</option>
-                <option value="invoiceDate">Invoice Date</option>
-                <option value="expectedDeliveryDate">Expected Delivery Date</option>
-                <option value="customerName">Customer Name</option>
-                <option value="salesmanName">Salesman Name</option>
-                <option value="billingAmount">Billing Amount</option>
-              </select>
               <button
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="w-1/3 bg-gray-200 rounded px-2 py-2 text-xs flex justify-center items-center"
+                onClick={() => setSortOrder('asc')}
+                className={`flex-1 py-2 rounded ${sortOrder === 'asc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                {sortOrder === 'asc' ? (
-                  <i className="fa fa-sort-asc" aria-hidden="true"></i>
-                ) : (
-                  <i className="fa fa-sort-desc" aria-hidden="true"></i>
-                )}
+                Ascending
+              </button>
+              <button
+                onClick={() => setSortOrder('desc')}
+                className={`flex-1 py-2 rounded ${sortOrder === 'desc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              >
+                Descending
               </button>
             </div>
           </div>
+
+          {/* Reset Filters and Sort */}
+          <div>
+            <button
+              onClick={resetFilters}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium"
+            >
+              Reset All
+            </button>
+          </div>
         </div>
 
-        {/* Reset Filters Button */}
-        <div className="mt-4 flex justify-end">
+        {/* Sidebar Toggle Button for Small Screens */}
+        <div className="md:hidden flex justify-end mb-4">
           <button
-            onClick={resetFilters}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold"
+            onClick={() => setIsSidebarOpen(true)}
+            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded"
+            aria-label="Open Controls"
           >
-            Reset Filters
+            <i className="fa fa-sliders-h"></i>
           </button>
+        </div>
+
+        {/* Sidebar Modal for Small Screens */}
+        {isSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex">
+            {/* Overlay */}
+            <div
+              className="fixed inset-0 bg-black opacity-50"
+              onClick={() => setIsSidebarOpen(false)}
+            ></div>
+
+            {/* Sidebar Content */}
+            <div className="relative bg-white w-3/4 max-w-xs p-4 overflow-y-auto">
+              <button
+                className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <i className="fa fa-times"></i>
+              </button>
+              <h3 className="text-md font-semibold mb-3">Controls</h3>
+
+              {/* Search Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="searchMobile">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  id="searchMobile"
+                  placeholder="Invoice No, Customer, Salesman..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+
+              {/* Approval Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="approvalFilterMobile">
+                  Approval Status
+                </label>
+                <select
+                  id="approvalFilterMobile"
+                  value={approvalFilter}
+                  onChange={(e) => setApprovalFilter(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value="All">All</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Unapproved">Unapproved</option>
+                </select>
+              </div>
+
+              {/* Delivery Status Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="deliveryFilterMobile">
+                  Delivery Status
+                </label>
+                <select
+                  id="deliveryFilterMobile"
+                  value={deliveryFilter}
+                  onChange={(e) => setDeliveryFilter(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value="All">All</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Pending">Pending</option>
+                  {/* Add more delivery statuses as needed */}
+                </select>
+              </div>
+
+              {/* Payment Status Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="paymentFilterMobile">
+                  Payment Status
+                </label>
+                <select
+                  id="paymentFilterMobile"
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value="All">All</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  {/* Add more payment statuses as needed */}
+                </select>
+              </div>
+
+              {/* Invoice Date Range Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="invoiceStartDateMobile">
+                  Invoice Start Date
+                </label>
+                <input
+                  type="date"
+                  id="invoiceStartDateMobile"
+                  value={invoiceStartDate}
+                  onChange={(e) => setInvoiceStartDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="invoiceEndDateMobile">
+                  Invoice End Date
+                </label>
+                <input
+                  type="date"
+                  id="invoiceEndDateMobile"
+                  value={invoiceEndDate}
+                  onChange={(e) => setInvoiceEndDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+
+              {/* Expected Delivery Date Range Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="deliveryStartDateMobile">
+                  Delivery Start Date
+                </label>
+                <input
+                  type="date"
+                  id="deliveryStartDateMobile"
+                  value={deliveryStartDate}
+                  onChange={(e) => setDeliveryStartDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="deliveryEndDateMobile">
+                  Delivery End Date
+                </label>
+                <input
+                  type="date"
+                  id="deliveryEndDateMobile"
+                  value={deliveryEndDate}
+                  onChange={(e) => setDeliveryEndDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+
+              {/* Sort Options */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="sortFieldMobile">
+                  Sort By
+                </label>
+                <select
+                  id="sortFieldMobile"
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value="">None</option>
+                  <option value="invoiceNo">Invoice No</option>
+                  <option value="invoiceDate">Invoice Date</option>
+                  <option value="expectedDeliveryDate">Expected Delivery Date</option>
+                  <option value="customerName">Customer Name</option>
+                  <option value="salesmanName">Salesman Name</option>
+                  <option value="billingAmount">Billing Amount</option>
+                </select>
+              </div>
+
+              {/* Sort Order */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="sortOrderMobile">
+                  Order
+                </label>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setSortOrder('asc')}
+                    className={`flex-1 py-2 rounded ${sortOrder === 'asc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    Ascending
+                  </button>
+                  <button
+                    onClick={() => setSortOrder('desc')}
+                    className={`flex-1 py-2 rounded ${sortOrder === 'desc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    Descending
+                  </button>
+                </div>
+              </div>
+
+              {/* Reset Filters and Sort */}
+              <div>
+                <button
+                  onClick={() => { resetFilters(); setIsSidebarOpen(false); }}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium"
+                >
+                  Reset All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters and Search (Visible on large screens) */}
+        <div className="flex-1">
+          {/* Loading Skeletons */}
+          {loading ? (
+            <div>
+              {/* Table Skeleton for Large Screens */}
+              <div className="hidden md:block">
+                {renderTableSkeleton()}
+              </div>
+              {/* Card Skeleton for Small Screens */}
+              <div className="md:hidden">
+                {renderCardSkeleton()}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Approved Billings */}
+              {filteredBillings.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm">
+                  No billings match your search and filter criteria.
+                </p>
+              ) : (
+                <>
+                  {/* Table for Large Screens */}
+                  <div className="hidden md:block">
+                    <table className="w-full text-sm text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
+                      <thead className="bg-red-600 text-sm text-white">
+                        <tr className="divide-y">
+                          <th className="px-4 py-2 text-left">Status</th>
+                          <th
+                            className="px-2 py-2 cursor-pointer"
+                            onClick={() => {
+                              setSortField('invoiceNo');
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                          >
+                            Invoice No {sortField === 'invoiceNo' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th
+                            className="px-2 py-2 cursor-pointer"
+                            onClick={() => {
+                              setSortField('invoiceDate');
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                          >
+                            Invoice Date {sortField === 'invoiceDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th
+                            className="px-2 py-2 cursor-pointer"
+                            onClick={() => {
+                              setSortField('salesmanName');
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                          >
+                            Salesman Name {sortField === 'salesmanName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th
+                            className="px-2 py-2 cursor-pointer"
+                            onClick={() => {
+                              setSortField('customerName');
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                          >
+                            Customer Name {sortField === 'customerName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th
+                            className="px-2 py-2 cursor-pointer"
+                            onClick={() => {
+                              setSortField('products.length');
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                          >
+                            Products {sortField === 'products.length' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="px-2 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedBillings.map((billing) => (
+                          <tr
+                            key={billing.invoiceNo}
+                            className="hover:bg-gray-100 divide-y divide-x"
+                          >
+                            <td className="px-4 py-2 text-center">
+                              {renderStatusIndicator(billing)}
+                            </td>
+                            <td
+                              onClick={() => navigate(`/driver/${billing._id}`)}
+                              className={`px-2 cursor-pointer flex text-sm font-semibold py-2 ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
+                            >
+                              {billing.invoiceNo} {billing.isApproved && <img className='h-3 w-3 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
+                            </td>
+                            <td className="px-2 text-sm py-2">
+                              {new Date(billing.invoiceDate).toLocaleDateString()}
+                            </td>
+                            <td className="px-2 text-sm py-2">
+                              {billing.salesmanName}
+                            </td>
+                            <td className="px-2 text-sm py-2">
+                              {billing.customerName}
+                            </td>
+                            <td className="px-2 text-sm py-2">
+                              {billing.products.length}
+                            </td>
+                            <td className="px-2 text-sm py-2">
+                              <div className="flex mt-2 text-sm space-x-1">
+                                {userInfo.isAdmin && (
+                                  <button
+                                    onClick={() => navigate(`/bills/edit/${billing._id}`)}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                  >
+                                    <i className="fa fa-pen mr-1"></i> Edit
+                                  </button>
+                                )}
+                                {userInfo.isAdmin && (
+                                  <button
+                                    onClick={() => generatePDF(billing)}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                  >
+                                    <i className="fa fa-truck mr-1"></i>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleView(billing)}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                >
+                                  <i className="fa fa-eye mr-1"></i> View
+                                </button>
+                                <button
+                                  onClick={() => handleRemove(billing._id)}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                >
+                                  <i className="fa fa-trash mr-1"></i>
+                                </button>
+                                {userInfo.isAdmin && (
+                                  <>
+                                    <button
+                                      onClick={() => printInvoice(billing)}
+                                      className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                    >
+                                      <i className="fa fa-print mr-1"></i>
+                                    </button>
+                                    {!billing.isApproved && (
+                                      <button
+                                        onClick={() => handleApprove(billing)}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                                      >
+                                        Approve
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Cards for Small Screens */}
+                  <div className="md:hidden">
+                    {paginatedBillings.map(renderCard)}
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 text-sm font-medium py-2 rounded-lg ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-red-500 text-white hover:bg-red-600'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-500">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 text-sm font-medium py-2 rounded-lg ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-red-500 text-white hover:bg-red-600'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Loading Skeletons */}
-      {loading ? (
-        <div>
-          {/* Table Skeleton for Large Screens */}
-          <div className="hidden md:block">
-            {renderTableSkeleton()}
-          </div>
-          {/* Card Skeleton for Small Screens */}
-          <div className="md:hidden">
-            {renderCardSkeleton()}
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Approved Billings */}
-          {filteredBillings.length === 0 ? (
-            <p className="text-center text-gray-500 text-xs">
-              No billings match your search and filter criteria.
-            </p>
-          ) : (
-            <>
-              {/* Table for Large Screens */}
-              <div className="hidden md:block">
-                <table className="w-full text-xs text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
-                  <thead className="bg-red-600 text-xs text-white">
-                    <tr className="divide-y">
-                      <th className="px-4 py-2 text-left">Status</th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('invoiceNo');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Invoice No {sortField === 'invoiceNo' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('invoiceDate');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Invoice Date {sortField === 'invoiceDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('salesmanName');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Salesman Name {sortField === 'salesmanName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('customerName');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Customer Name {sortField === 'customerName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('products.length');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Products {sortField === 'products.length' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th className="px-2 py-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedBillings.map((billing) => (
-                      <tr
-                        key={billing.invoiceNo}
-                        className="hover:bg-gray-100 divide-y divide-x"
-                      >
-                        <td className="px-4 py-2 text-center">
-                          {renderStatusIndicator(billing)}
-                        </td>
-                        <td
-                          onClick={() => navigate(`/driver/${billing._id}`)}
-                          className={`px-2 cursor-pointer flex text-xs font-bold py-2 ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
-                        >
-                          {billing.invoiceNo} {billing.isApproved && <img className='h-2 w-2 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {new Date(billing.invoiceDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {billing.salesmanName}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {billing.customerName}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {billing.products.length}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          <div className="flex mt-2 text-xs space-x-1">
-                            {userInfo.isAdmin && (
-                              <button
-                                onClick={() => navigate(`/bills/edit/${billing._id}`)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                              >
-                                <i className="fa fa-pen mr-1"></i> Edit
-                              </button>
-                            )}
-                            {userInfo.isAdmin && (
-                              <button
-                                onClick={() => generatePDF(billing)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                              >
-                                <i className="fa fa-truck mr-1"></i> PDF
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleView(billing)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                            >
-                              <i className="fa fa-eye mr-1"></i> View
-                            </button>
-                            <button
-                              onClick={() => handleRemove(billing._id)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                            >
-                              <i className="fa fa-trash mr-1"></i> Delete
-                            </button>
-                            {userInfo.isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => printInvoice(billing)}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                                >
-                                  <i className="fa fa-print mr-1"></i> Print
-                                </button>
-                                {!billing.isApproved && (
-                                  <button
-                                    onClick={() => handleApprove(billing)}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                                  >
-                                    Approve
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Cards for Small Screens */}
-              <div className="md:hidden">
-                {paginatedBillings.map(renderCard)}
-              </div>
-
-              {/* Pagination */}
-              <div className="flex justify-between items-center mt-4">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 text-xs font-bold py-2 rounded-lg ${
-                    currentPage === 1
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'
-                  }`}
-                >
-                  Previous
-                </button>
-                <span className="text-xs text-gray-500">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 text-xs font-bold py-2 rounded-lg ${
-                    currentPage === totalPages
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            </>
-          )}
-        </>
-      )}
-
       {/* Modal for Viewing Billing Details */}
       {selectedBilling && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center z-50 overflow-auto">
-          <div className="bg-white overflow-y-auto top-1/2 rounded-lg p-5 w-full max-w-2xl relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl relative shadow-lg">
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
               onClick={closeModal}
             >
-              <i className="fa fa-times"></i>
+              <i className="fa fa-times text-xl"></i>
             </button>
-            <div className="mt-2 p-2">
-              <p className="text-sm text-gray-600 font-bold mb-2 text-red-600">
+            <div className="mt-2">
+              <h2 className="text-lg font-semibold text-red-600 mb-4">
                 Details for Invoice No. {selectedBilling.invoiceNo}
-              </p>
+              </h2>
 
-              <div className="flex justify-between">
-                <p className="text-xs mb-1">
-                  Salesman Name:{' '}
-                  <span className="text-gray-700">{selectedBilling.salesmanName}</span>
-                </p>
-                <p className="text-xs mb-1">
-                  Marketed By:{' '}
-                  <span className="text-gray-700">{selectedBilling.marketedBy}</span>
-                </p>
+              {/* Billing Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Customer Name:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.customerName}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Customer Address:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.customerAddress}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Customer Contact:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.customerContactNumber}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Salesman Name:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.salesmanName}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Salesman Phone:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.salesmanPhoneNumber}</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Invoice Date:
+                    <span className="text-gray-900 font-normal ml-1">{new Date(selectedBilling.invoiceDate).toLocaleDateString()}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Expected Delivery:
+                    <span className="text-gray-900 font-normal ml-1">{new Date(selectedBilling.expectedDeliveryDate).toLocaleDateString()}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Delivery Status:
+                    <span
+                      className={`ml-1 ${
+                        selectedBilling.deliveryStatus === 'Delivered'
+                          ? 'text-green-500'
+                          : selectedBilling.deliveryStatus === 'Partially Delivered'
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                      } font-semibold`}
+                    >
+                      {selectedBilling.deliveryStatus}
+                    </span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Payment Status:
+                    <span
+                      className={`ml-1 ${
+                        selectedBilling.paymentStatus === 'Paid'
+                          ? 'text-green-500'
+                          : selectedBilling.paymentStatus === 'Partial'
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                      } font-semibold`}
+                    >
+                      {selectedBilling.paymentStatus}
+                    </span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700 mt-2">
+                    Marketed By:
+                    <span className="text-gray-900 font-normal ml-1">{selectedBilling.marketedBy}</span>
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-between">
-                <p className="text-xs mb-1">
-                  Customer Name:{' '}
-                  <span className="text-gray-700">{selectedBilling.customerName}</span>
-                </p>
-                <p className="text-xs mb-1">
-                  Invoice Date:{' '}
-                  <span className="text-gray-700">
-                    {new Date(selectedBilling.invoiceDate).toLocaleDateString()}
-                  </span>
-                </p>
+              {/* Billing Amount Details */}
+              <div className="mt-4">
+                <h3 className="text-md font-semibold text-red-600 mb-2">Billing Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <p className="text-sm font-medium text-gray-700">
+                    Grand Total:
+                    <span className="text-gray-900 font-normal ml-1">Rs. {parseFloat(selectedBilling.grandTotal).toFixed(2)}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700">
+                    Billing Amount:
+                    <span className="text-gray-900 font-normal ml-1">Rs. {parseFloat(selectedBilling.billingAmount).toFixed(2)}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700">
+                    Discount:
+                    <span className="text-gray-900 font-normal ml-1">Rs. {parseFloat(selectedBilling.discount).toFixed(2)}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700">
+                    Amount Received:
+                    <span className="text-green-500 font-semibold ml-1">Rs. {parseFloat(selectedBilling.billingAmountReceived).toFixed(2)}</span>
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-between">
-                <p className="text-xs mb-1">
-                  Delivery Status:{' '}
-                  <span
-                    className={`${
-                      selectedBilling.deliveryStatus === 'Delivered'
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    } font-bold`}
-                  >
-                    {selectedBilling.deliveryStatus}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Payment Status:{' '}
-                  <span
-                    className={`${
-                      selectedBilling.paymentStatus === 'Paid'
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    } font-bold`}
-                  >
-                    {selectedBilling.paymentStatus}
-                  </span>
-                </p>
-              </div>
-
-              <h3 className="text-sm font-bold text-red-600 mt-5">
-                Products: {selectedBilling.products?.length}
-              </h3>
-              <div className="mx-auto my-8">
-                <div className="relative overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              {/* Products Table */}
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-red-600 mb-2">Products</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm text-left text-gray-500">
+                    <thead className="text-sm text-gray-700 uppercase bg-gray-50">
                       <tr>
                         <th scope="col" className="px-4 py-3">
                           Sl
@@ -1008,47 +1267,47 @@ const BillingList = () => {
                         <th scope="col" className="px-4 py-3">
                           Product
                         </th>
-                        <th scope="col" className="px-2 py-3 text-center">
+                        <th scope="col" className="px-4 py-3 text-center">
                           ID
                         </th>
-                        <th scope="col" className="px-2 py-3">
+                        <th scope="col" className="px-4 py-3">
                           Qty
                         </th>
-                        <th scope="col" className="px-2 py-3">
+                        <th scope="col" className="px-4 py-3 text-center">
                           D.Qty
                         </th>
-                        <th scope="col" className="px-2 py-3">
+                        <th scope="col" className="px-4 py-3">
                           Delivered
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedBilling?.products.map((product, index) => (
+                      {selectedBilling.products.map((product, index) => (
                         <tr
                           key={index}
                           className="bg-white border-b hover:bg-gray-50"
                         >
                           <th
                             scope="row"
-                            className="px-2 py-4 text-xs font-medium text-gray-900 whitespace-nowrap"
+                            className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap"
                           >
                             {index + 1}
                           </th>
-                          <td className="px-2 py-4 text-xs text-gray-900">
-                            {product.name.length > 7
-                              ? `${product.name.slice(0, 7)}...`
+                          <td className="px-4 py-4 text-sm text-gray-900">
+                            {product.name.length > 15
+                              ? `${product.name.slice(0, 15)}...`
                               : product.name}
                           </td>
-                          <td className="px-2 py-4 text-xs text-center">
+                          <td className="px-4 py-4 text-sm text-center">
                             {product.item_id}
                           </td>
-                          <td className="px-2 py-4 text-xs">
+                          <td className="px-4 py-4 text-sm">
                             {product.quantity}
                           </td>
-                          <td className="px-2 py-4 text-xs text-center">
+                          <td className="px-4 py-4 text-sm text-center">
                             {product.deliveredQuantity}
                           </td>
-                          <td className="px-2 py-4 text-xs">
+                          <td className="px-4 py-4 text-sm">
                             <input
                               type="checkbox"
                               className={`text-green-500 ${
@@ -1064,41 +1323,153 @@ const BillingList = () => {
                       ))}
                     </tbody>
                   </table>
-
-                  <div className="mt-10 text-right mr-2">
-                    <p className="text-xs mb-1">
-                      Sub Total:{' '}
-                      <span className="text-gray-600">
-                        Rs. {((parseFloat(selectedBilling.grandTotal) / 1.18)).toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-xs mb-1">
-                      GST (18%):{' '}
-                      <span className="text-gray-600">
-                        Rs. {(parseFloat(selectedBilling.grandTotal) - parseFloat(selectedBilling.billingAmount / 1.18)).toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-xs mb-1">
-                      Discount:{' '}
-                      <span className="text-gray-600">
-                        Rs. {parseFloat(selectedBilling.discount).toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-sm font-bold mb-1">
-                      Grand Total:{' '}
-                      <span className="text-gray-600">
-                        Rs. {(parseFloat(selectedBilling.grandTotal ? selectedBilling.grandTotal : 0)).toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-xs mb-1">
-                      Amount Received:{' '}
-                      <span className="text-green-500 font-bold">
-                        Rs. {parseFloat(selectedBilling.billingAmountReceived).toFixed(2)}
-                      </span>
-                    </p>
-                  </div>
                 </div>
               </div>
+
+              {/* Additional Charges */}
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-red-600 mb-2">Additional Charges</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <p className="text-sm font-medium text-gray-700">
+                    Fuel Charge:
+                    <span className="text-gray-900 font-normal ml-1">Rs. {parseFloat(selectedBilling.totalFuelCharge).toFixed(2)}</span>
+                  </p>
+                  <p className="text-sm font-medium text-gray-700">
+                    Other Expenses:
+                    <span className="text-gray-900 font-normal ml-1">Rs. {parseFloat(selectedBilling.totalOtherExpenses).toFixed(2)}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Remarks */}
+              {selectedBilling.remark && (
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-red-600 mb-2">Remarks</h3>
+                  <p className="text-sm text-gray-700">{selectedBilling.remark}</p>
+                </div>
+              )}
+
+              {/* Payments */}
+              {selectedBilling.payments.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-red-600 mb-2">Payments</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm text-left text-gray-500">
+                      <thead className="text-sm text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-4 py-3">
+                            Amount
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Method
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Reference ID
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Date
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Remark
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedBilling.payments.map((payment, index) => (
+                          <tr
+                            key={index}
+                            className="bg-white border-b hover:bg-gray-50"
+                          >
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              Rs. {parseFloat(payment.amount).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {payment.method}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {payment.referenceId}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {new Date(payment.date).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {payment.remark}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Deliveries */}
+              {selectedBilling.deliveries.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-red-600 mb-2">Deliveries</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm text-left text-gray-500">
+                      <thead className="text-sm text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-4 py-3">
+                            Delivery ID
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Driver Name
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Status
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            KM Travelled
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Fuel Charge
+                          </th>
+                          <th scope="col" className="px-4 py-3">
+                            Other Expenses
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedBilling.deliveries.map((delivery, index) => (
+                          <tr
+                            key={index}
+                            className="bg-white border-b hover:bg-gray-50"
+                          >
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {delivery.deliveryId}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {delivery.driverName}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {delivery.deliveryStatus}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              {delivery.kmTravelled || 0}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              Rs. {parseFloat(delivery.fuelCharge || 0).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-900">
+                              Rs. {parseFloat(delivery.otherExpenses.reduce((acc, exp) => acc + (exp.amount || 0), 0)).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Notes */}
+              {selectedBilling.notes && (
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-red-600 mb-2">Notes</h3>
+                  <p className="text-sm text-gray-700">{selectedBilling.notes}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -26,7 +26,7 @@ export default function BillingScreen() {
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [customerContactNumber, setCustomerContactNumber] = useState('');
-  const [showroom, setshowRoom] = useState('');
+  const [showroom, setshowRoom] = useState('Moncompu - Main Office');
   const [marketedBy, setMarketedBy] = useState('');
   const [discount, setDiscount] = useState(0);
   const [receivedAmount, setReceivedAmount] = useState(0);
@@ -65,7 +65,8 @@ export default function BillingScreen() {
   const [customerSuggestions,setCustomerSuggestions] = useState([]);
   const [customerSuggesstionIndex,setCustomerSuggesstionIndex] = useState(-1);
   const [accounts,setAccounts] = useState([]);
-  const [fetchItemPrice, setFetchItemPrice] = useState([]);
+  const [fetchItemPrice, setFetchItemPrice] = useState('');
+  const [displaysellingPrice, setDisplaysellingPrice] = useState('');
 
   const userSignin = useSelector((state) => state.userSignin);
   const { userInfo } = userSignin;
@@ -359,16 +360,21 @@ export default function BillingScreen() {
       const parsedArea = parsedActLenght * parsedActBreadth
     if(selectedProduct.category === "TILES") {
       if(unit === "SQFT") {
-      setSellingPrice((parseFloat((selectedProduct.price) / 0.80) / parsedArea).toFixed(2));
+      // setSellingPrice((parseFloat((selectedProduct.price) / 0.80) / parsedArea).toFixed(2));
+      setDisplaysellingPrice((parseFloat((selectedProduct.price) / 0.80) / parsedArea).toFixed(2));
       } else if(unit === "BOX") {
-        setSellingPrice((parseFloat((selectedProduct.price) / 0.80) * selectedProduct.psRatio).toFixed(2));
+        // setSellingPrice((parseFloat((selectedProduct.price) / 0.80) * selectedProduct.psRatio).toFixed(2));
+        setDisplaysellingPrice((parseFloat((selectedProduct.price) / 0.80) * selectedProduct.psRatio).toFixed(2));
       } else {
-        setSellingPrice(parseFloat(((selectedProduct.price) / 0.80).toFixed(2)));
+        // setSellingPrice(parseFloat(((selectedProduct.price) / 0.80).toFixed(2)));
+        setDisplaysellingPrice(parseFloat(((selectedProduct.price) / 0.80).toFixed(2)));
       }
     }else if(selectedProduct.category === "GRANITE"){
-      setSellingPrice((parseFloat(selectedProduct.price) / 0.65).toFixed(2));
+      // setSellingPrice((parseFloat(selectedProduct.price) / 0.65).toFixed(2));
+      setDisplaysellingPrice((parseFloat(selectedProduct.price) / 0.65).toFixed(2));
     }else {
-      setSellingPrice((parseFloat(selectedProduct.price) / 0.70).toFixed(2));
+      // setSellingPrice((parseFloat(selectedProduct.price) / 0.70).toFixed(2));
+      setDisplaysellingPrice((parseFloat(selectedProduct.price) / 0.70).toFixed(2));
     }
   }
 
@@ -445,15 +451,20 @@ export default function BillingScreen() {
       if(data.category === "TILES") {
         if(unit === "SQFT") {
         setSellingPrice((parseFloat((data.price) / 0.80) / parsedArea).toFixed(2));
+        setDisplaysellingPrice((parseFloat((data.price) / 0.80) / parsedArea).toFixed(2));
         } else if(unit === "BOX") {
           setSellingPrice((parseFloat((data.price) / 0.80) * data.psRatio).toFixed(2));
+          setDisplaysellingPrice((parseFloat((data.price) / 0.80) * data.psRatio).toFixed(2));
         } else {
           setSellingPrice(parseFloat(((data.price) / 0.80).toFixed(2)));
+          setDisplaysellingPrice(parseFloat(((data.price) / 0.80).toFixed(2)));
         }
       }else if(data.category === "GRANITE"){
         setSellingPrice((parseFloat(data.price) / 0.65).toFixed(2));
+        setDisplaysellingPrice((parseFloat(data.price) / 0.65).toFixed(2));
       }else {
         setSellingPrice((parseFloat(data.price) / 0.70).toFixed(2));
+        setDisplaysellingPrice((parseFloat(data.price) / 0.70).toFixed(2));
       }
       setFetchQuantity(data.countInStock);
       setSuggestions([]);
@@ -553,6 +564,7 @@ export default function BillingScreen() {
     setItemId('');
     setItemBrand('');
     setSellingPrice('');
+    setDisplaysellingPrice('');
     setError('');
   };
   
@@ -1665,7 +1677,7 @@ useEffect(() => {
 
               </div>
 
-              <div className="grid grid-cols-5 gap-2 mt-2">
+              <div className="grid grid-cols-6 gap-2 mt-2">
                 {/* Unit */}
                 <div className="flex flex-col">
                   <label className="block text-gray-700 text-xs mb-1">Unit</label>
@@ -1700,9 +1712,21 @@ useEffect(() => {
                   />
                 </div>
 
+                <div className="mb-2">
+              <label className="block text-xs mb-1 text-gray-700">Selling Price</label>
+              <input
+      type="number"
+      value={displaysellingPrice}
+      className="w-full border border-gray-300 px-2 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+      placeholder="No Selling Price"
+      readOnly
+       // Keep readOnly if manual editing isn't allowed
+    />
+            </div> 
+
                 {/* Selling Price */}
                 <div className="flex flex-col">
-                  <label className="block text-gray-700 text-xs mb-1">Selling Price</label>
+                  <label className="block text-gray-700 text-xs mb-1">Cus. Selling Price</label>
                   <input
                     type="number"
                     ref={sellingPriceRef}
@@ -1936,9 +1960,20 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Selling Price */}
             <div className="mb-2">
               <label className="block text-xs mb-1 text-gray-700">Selling Price</label>
+              <input
+                type="number"
+                value={displaysellingPrice}
+                className="w-full border border-gray-300 px-2 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                placeholder="No Selling Price"
+                readOnly
+              />
+            </div>
+
+            {/* Selling Price */}
+            <div className="mb-2">
+              <label className="block text-xs mb-1 text-gray-700">Cus. Selling Price</label>
               <input
                 type="number"
                 ref={sellingPriceMobileRef}

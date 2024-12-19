@@ -62,6 +62,9 @@ export default function EditBillScreen() {
   const [itemCategory, setItemCategory] = useState('');
   const [itemBrand, setItemBrand] = useState('');
   const [outofStockProduct,setOutofstockProduct] = useState(null);
+  const [displaysellingPrice, setDisplaysellingPrice] = useState('');
+  const [fetchItemPrice, setFetchItemPrice] = useState('');
+  
 
 
   // Stepper Control
@@ -235,6 +238,35 @@ export default function EditBillScreen() {
     fetchAccounts();
   }, []);
 
+
+
+  useEffect(()=>{ 
+      if(selectedProduct){
+        const parsedActLenght = parseFloat(selectedProduct.actLength)
+        const parsedActBreadth = parseFloat(selectedProduct.actBreadth)
+        const parsedArea = parsedActLenght * parsedActBreadth
+      if(selectedProduct.category === "TILES") {
+        if(unit === "SQFT") {
+        // setSellingPrice((parseFloat((selectedProduct.price) / 0.80) / parsedArea).toFixed(2));
+        setDisplaysellingPrice((parseFloat((selectedProduct.price) / 0.80) / parsedArea).toFixed(2));
+        } else if(unit === "BOX") {
+          // setSellingPrice((parseFloat((selectedProduct.price) / 0.80) * selectedProduct.psRatio).toFixed(2));
+          setDisplaysellingPrice((parseFloat((selectedProduct.price) / 0.80) * selectedProduct.psRatio).toFixed(2));
+        } else {
+          // setSellingPrice(parseFloat(((selectedProduct.price) / 0.80).toFixed(2)));
+          setDisplaysellingPrice(parseFloat(((selectedProduct.price) / 0.80).toFixed(2)));
+        }
+      }else if(selectedProduct.category === "GRANITE"){
+        // setSellingPrice((parseFloat(selectedProduct.price) / 0.65).toFixed(2));
+        setDisplaysellingPrice((parseFloat(selectedProduct.price) / 0.65).toFixed(2));
+      }else {
+        // setSellingPrice((parseFloat(selectedProduct.price) / 0.70).toFixed(2));
+        setDisplaysellingPrice((parseFloat(selectedProduct.price) / 0.70).toFixed(2));
+      }
+    }
+  
+    },[unit]);
+
  // Fetch Billing Details
 useEffect(() => {
   const fetchBillingDetails = async () => {
@@ -361,7 +393,28 @@ useEffect(() => {
 
       setSelectedProduct(data);
       setQuantity(1);
-      setSellingPrice(data.price);
+      setFetchItemPrice(data.price);
+      const parsedActLenght = parseFloat(data.actLength)
+      const parsedActBreadth = parseFloat(data.actBreadth)
+      const parsedArea = parsedActLenght * parsedActBreadth
+      if(data.category === "TILES") {
+        if(unit === "SQFT") {
+        setSellingPrice((parseFloat((data.price) / 0.80) / parsedArea).toFixed(2));
+        setDisplaysellingPrice((parseFloat((data.price) / 0.80) / parsedArea).toFixed(2));
+        } else if(unit === "BOX") {
+          setSellingPrice((parseFloat((data.price) / 0.80) * data.psRatio).toFixed(2));
+          setDisplaysellingPrice((parseFloat((data.price) / 0.80) * data.psRatio).toFixed(2));
+        } else {
+          setSellingPrice(parseFloat(((data.price) / 0.80).toFixed(2)));
+          setDisplaysellingPrice(parseFloat(((data.price) / 0.80).toFixed(2)));
+        }
+      }else if(data.category === "GRANITE"){
+        setSellingPrice((parseFloat(data.price) / 0.65).toFixed(2));
+        setDisplaysellingPrice((parseFloat(data.price) / 0.65).toFixed(2));
+      }else {
+        setSellingPrice((parseFloat(data.price) / 0.70).toFixed(2));
+        setDisplaysellingPrice((parseFloat(data.price) / 0.70).toFixed(2));
+      }
       setFetchQuantity(data.countInStock);
       itemNameRef.current?.focus();
       setItemId(data.item_id);
@@ -453,6 +506,7 @@ useEffect(() => {
     setQuantity(1);
     setUnit('NOS');
     setSellingPrice('');
+    setDisplaysellingPrice('');
     setItemId('');
     setItemName('');
     setItemBrand('');
@@ -1537,7 +1591,7 @@ useEffect(() => {
 
               </div>
 
-              <div className="grid grid-cols-5 gap-2 mt-2">
+              <div className="grid grid-cols-6 gap-2 mt-2">
                 {/* Unit */}
                 <div className="flex flex-col">
                   <label className="block text-gray-700 text-xs mb-1">Unit</label>
@@ -1572,9 +1626,21 @@ useEffect(() => {
                   />
                 </div>
 
+                <div className="mb-2">
+              <label className="block text-xs mb-1 text-gray-700">Selling Price</label>
+              <input
+      type="number"
+      value={displaysellingPrice}
+      className="w-full border border-gray-300 px-2 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+      placeholder="No Selling Price"
+      readOnly
+       // Keep readOnly if manual editing isn't allowed
+    />
+            </div> 
+
                 {/* Selling Price */}
                 <div className="flex flex-col">
-                  <label className="block text-gray-700 text-xs mb-1">Selling Price</label>
+                  <label className="block text-gray-700 text-xs mb-1">Cus. Selling Price</label>
                   <input
                     type="number"
                     ref={sellingPriceRef}
@@ -1802,10 +1868,22 @@ useEffect(() => {
                 </div>
               </div>
 
+              <div className="mb-2">
+              <label className="block text-xs mb-1 text-gray-700">Selling Price</label>
+              <input
+      type="number"
+      value={displaysellingPrice}
+      className="w-full border border-gray-300 px-2 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+      placeholder="No Selling Price"
+      readOnly
+       // Keep readOnly if manual editing isn't allowed
+    />
+            </div> 
+
               {/* Selling Price */}
               <div className="mb-4">
                 <label className="block text-xs mb-1 text-gray-700">
-                  Selling Price
+                 Cus. Selling Price
                 </label>
                 <input
                   type="number"
