@@ -1419,7 +1419,7 @@ useEffect(() => {
                             </p>
                           </td>
                           <td className="px-2 py-2 text-center text-xs">
-                            {product.quantity}
+                          {(product.quantity).toFixed(2)}
                           </td>
                           <td className="px-2 py-2 text-xs">
                             ₹{(product.sellingPriceinQty).toFixed(2)}

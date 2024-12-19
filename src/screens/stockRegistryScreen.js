@@ -387,6 +387,7 @@ const StockRegistry = () => {
                   <thead className="bg-red-600 text-xs text-white">
                     <tr className="divide-y">
                       <th className="px-2 py-1 text-left">Date</th>
+                      <th className="px-2 py-1">Item Id</th>
                       <th className="px-2 py-1">Item Name</th>
                       <th className="px-2 py-1">Brand</th>
                       <th className="px-2 py-1">Category</th>
@@ -405,6 +406,7 @@ const StockRegistry = () => {
                         <td className="px-2 py-1 text-center">
                           {new Date(log.date).toLocaleDateString()}
                         </td>
+                        <td className="px-2 py-1">{log.itemId}</td>
                         <td className="px-2 py-1">{log.name}</td>
                         <td className="px-2 py-1">{log.brand}</td>
                         <td className="px-2 py-1">{log.category}</td>
