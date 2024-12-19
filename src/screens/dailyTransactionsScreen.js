@@ -581,8 +581,8 @@ const DailyTransactions = () => {
               className="border border-gray-300 rounded-md p-1 text-xs focus:ring-red-500 focus:border-red-500 w-40"
             >
               <option value="">All</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat.name}>
+              {categories.map((cat,index) => (
+                <option key={index} value={cat.name}>
                   {cat.name}
                 </option>
               ))}
@@ -601,8 +601,8 @@ const DailyTransactions = () => {
               className="border border-gray-300 rounded-md p-1 text-xs focus:ring-red-500 focus:border-red-500 w-40"
             >
               <option value="">All</option>
-              {accounts.map((acc) => (
-                <option key={acc.accountId} value={acc.accountId}>
+              {accounts.map((acc,index) => (
+                <option key={index} value={acc.accountId}>
                   {acc.accountName}
                 </option>
               ))}
@@ -784,7 +784,7 @@ const DailyTransactions = () => {
           className="flex font-bold items-center justify-center bg-blue-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-blue-600 transition"
           title="Transfer Between Accounts"
         >
-          <i className="fa fa-exchange" />
+          <i className="fa fa-share" />
         </button>
 
         <button
@@ -870,8 +870,8 @@ const DailyTransactions = () => {
                       required
                     >
                       <option value="">Select Account</option>
-                      {accounts.map((account) => (
-                        <option key={account.accountId} value={account.accountId}>
+                      {accounts.map((account,index) => (
+                        <option key={index} value={account.accountId}>
                           {account.accountName}
                         </option>
                       ))}
@@ -888,8 +888,8 @@ const DailyTransactions = () => {
                       required
                     >
                       <option value="">Select Account</option>
-                      {accounts.map((account) => (
-                        <option key={account.accountId} value={account.accountId}>
+                      {accounts.map((account,index) => (
+                        <option key={index} value={account.accountId}>
                           {account.accountName}
                         </option>
                       ))}
@@ -914,8 +914,8 @@ const DailyTransactions = () => {
   required
 >
   <option value="">Select Category</option>
-  {categories.map((cat) => (
-    <option key={cat._id} value={cat.name}>
+  {categories.map((cat,index) => (
+    <option key={index} value={cat.name}>
       {cat.name}
     </option>
   ))}
@@ -955,8 +955,8 @@ const DailyTransactions = () => {
                     required
                   >
                     <option value="">Select Purchase</option>
-                    {purchasePayments.map((purchase) => (
-                      <option key={purchase._id} value={purchase._id}>
+                    {purchasePayments.map((purchase,index) => (
+                      <option key={index} value={purchase._id}>
                         {purchase.invoiceNo} - {purchase.sellerName}
                       </option>
                     ))}
@@ -975,8 +975,8 @@ const DailyTransactions = () => {
                     required
                   >
                     <option value="">Select Transport</option>
-                    {transportPayments.map((transport) => (
-                      <option key={transport._id} value={transport._id}>
+                    {transportPayments.map((transport,index) => (
+                      <option key={index} value={transport._id}>
                         {transport.transportName} -{' '}
                         {new Date(transport.transportDate).toLocaleDateString()}
                       </option>
@@ -1006,8 +1006,8 @@ const DailyTransactions = () => {
                   required
                 >
                   <option value="">Select Method</option>
-                  {accounts.map((account) => (
-                    <option key={account.accountId} value={account.accountId}>
+                  {accounts.map((account,index) => (
+                    <option key={index} value={account.accountId}>
                       {account.accountName}
                     </option>
                   ))}
