@@ -85,7 +85,7 @@ export default function SearchScreen() {
         setLoading(true);
 
         const { data } = await api.get(
-          `/api/products?pageNumber=${pageNumber}&name=${name}&category=${category}&brand=${brand}&size=${size}&min=${min}&max=${max}&rating=${rating}&order=${order}&inStock=${inStock}&countInStockMin=${countInStockMin}`
+          `/api/products?pageNumber=${pageNumber}&name=${name}&category=${category}&brand=${brand}&size=${size}&min=${min || 0}&max=${max || 0}&rating=${rating}&order=${order}&inStock=${inStock}&countInStockMin=${countInStockMin}`
         );
 
         setProducts(data.products);

@@ -323,7 +323,7 @@ export default function ReturnListingScreen() {
                                 >
                                   <i className="fa fa-print mr-1"></i> Print
                                 </button>
-                                <button
+                                {/* <button
                                   onClick={() =>
                                     navigate(`/return/edit/${returnEntry.returnNo}`)
                                   }
@@ -335,7 +335,7 @@ export default function ReturnListingScreen() {
                                   disabled={!userInfo.isAdmin && returnEntry.isApproved}
                                 >
                                   <i className="fa fa-edit mr-1"></i> Edit
-                                </button>
+                                </button> */}
                                 <button
                                   onClick={() => handleView(returnEntry)}
                                   className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center"
@@ -397,7 +397,7 @@ export default function ReturnListingScreen() {
                           >
                             <i className="fa fa-print mr-1"></i> Print
                           </button>
-                          <button
+                          {/* <button
                             onClick={() =>
                               navigate(`/return/edit/${returnEntry.returnNo}`)
                             }
@@ -409,7 +409,7 @@ export default function ReturnListingScreen() {
                             disabled={!userInfo.isAdmin && returnEntry.isApproved}
                           >
                             <i className="fa fa-edit mr-1"></i> Edit
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => handleView(returnEntry)}
                             className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center text-xs"
