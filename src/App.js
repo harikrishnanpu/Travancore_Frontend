@@ -161,7 +161,7 @@ useEffect(() => {
             <Route path="/damages" element={<DamagedDataScreen />}></Route>
             <Route path="/create-return" element={<ReturnBillingScreen />}></Route>
             <Route path="/driver" element={<DriverPage />}></Route>
-            <Route path="/driver/:id" element={<DriverPage />}></Route>
+            <Route path="/driver/:id" element={<DriverPage /> } />
             <Route path="/driver-invoice" element={<DriverBillingPage />}></Route>
             <Route path="/low-stock" element={<LowStockAndBillingPage />}></Route>
             <Route path="/get-product" element={<ProductListPage />}></Route>

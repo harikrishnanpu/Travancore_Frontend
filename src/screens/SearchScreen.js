@@ -62,6 +62,10 @@ export default function SearchScreen() {
     product: createdProduct,
   } = productCreate;
 
+
+    const userSignin = useSelector((state) => state.userSignin);
+    const { userInfo } = userSignin;
+
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -261,7 +265,7 @@ export default function SearchScreen() {
             Products and Management
           </p>
         </div>
-        <button
+      {userInfo.isAdmin &&  <button
   type="button"
   className="bg-red-500 font-bold text-sm text-white py-2 px-2 rounded-lg hover:bg-red-600 transition-all duration-200 shadow-lg"
   onClick={(e) => {
@@ -270,7 +274,7 @@ export default function SearchScreen() {
   }}
 >
   + Add Product
-</button>
+</button> }
 
       </div>
 

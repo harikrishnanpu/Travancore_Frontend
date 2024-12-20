@@ -68,7 +68,7 @@ const DriverPage = () => {
       if (searchTerm) {
         try {
           const response = await api.get(
-            `/api/billing/billing/suggestions?search=${searchTerm}`
+            `/api/billing/billing/driver/suggestions?search=${searchTerm}`
           );
           setSuggestions(response.data);
           if (response.data.length === 0) {

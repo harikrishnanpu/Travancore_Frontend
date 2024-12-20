@@ -62,7 +62,7 @@ const BillingList = () => {
     // Filter based on user role: non-admin can see only approved or their own submitted
     if (!userInfo.isAdmin) {
       data = data.filter(
-        (billing) => billing.isApproved || billing.submittedBy === userInfo._id
+        (billing) =>  billing.submittedBy === userInfo._id && !billing.isApproved
       );
     }
 
@@ -468,12 +468,12 @@ const BillingList = () => {
         >
           <i className="fa fa-eye mr-2"></i> View
         </button>
-        <button
+        {userInfo.isAdmin && <button
           onClick={() => handleRemove(billing._id)}
           className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
         >
           <i className="fa fa-trash mr-2"></i>
-        </button>
+        </button> }
         {userInfo.isAdmin && (
           <>
             {/* <button
@@ -675,7 +675,7 @@ const BillingList = () => {
       )}
 
       {/* Page Header and Stats */}
-      <div className="mb-6 space-y-4">
+    {userInfo.isAdmin &&  <div className="mb-6 space-y-4">
         {/* Stats bar */}
         <div className="flex flex-wrap justify-center sm:justify-start gap-4">
           <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[200px]">
@@ -699,7 +699,7 @@ const BillingList = () => {
             <p className="text-sm font-bold text-gray-700">Rs. {stats.unapprovedAmount.toFixed(2)}</p>
           </div>
         </div>
-      </div>
+      </div> }
 
       {/* Tabs for Status Filter */}
       <div className="flex flex-wrap justify-center sm:justify-start space-x-2 mb-4">
@@ -991,12 +991,12 @@ const BillingList = () => {
                         >
                           <i className="fa fa-eye mr-1"></i> View
                         </button>
-                        <button
+                       {userInfo.isAdmin && <button
                           onClick={() => handleRemove(billing._id)}
                           className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
                         >
                           <i className="fa fa-trash mr-1"></i> Delete
-                        </button>
+                        </button> }
                         {userInfo.isAdmin && (
                           <>
                             {/* <button

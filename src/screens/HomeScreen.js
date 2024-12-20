@@ -77,6 +77,7 @@ export default function HomeScreen() {
             <CardSection title="Billing">
               <ActionButton href="/create-bill" title={`${userInfo.isAdmin ? 'Create Bill' : 'Add Estimate'}`} />
               <ActionButton href="/bills" title="All Bills" />
+              {!userInfo.isAdmin && <ActionButton href="/update-stock" title="Update Stock" />}
             </CardSection>
 
             {userInfo.isAdmin && <CardSection title="Purchases">
@@ -104,20 +105,20 @@ export default function HomeScreen() {
               <ActionButton href="/driver-invoice" title="Delivery" />
             </CardSection>
 
-            <CardSection title="Accounts">
+           {userInfo.isAdmin && <CardSection title="Accounts">
             <ActionButton href="/daily-transactions" title="Daily Transactions" />
             <ActionButton href="/verify" title="Verify Bills" />
-            </CardSection>
+            </CardSection> }
 
             {userInfo.isAdmin && <CardSection title="Purchase Paymets">
             <ActionButton href="/purchase-payments" title="Purchase Transactions" />
             <ActionButton href="/transport-payments" title="Transport Transactions" />
             </CardSection>}
 
-            <CardSection title="Delivery & Stock Registry">
+            {userInfo.isAdmin &&  <CardSection title="Delivery & Stock Registry">
             <ActionButton href="/driver-tracker" title="Delivery Tracking" />
             <ActionButton href="/stock-logs" title="Stock Registry" />
-            </CardSection>
+            </CardSection> }
 
 
             {userInfo.isAdmin && <CardSection title="Reports">

@@ -366,9 +366,8 @@ const StockUpdatePage = () => {
               <thead className="bg-red-600 text-white">
                 <tr>
                   <th className="px-2 py-1 text-left">Date</th>
+                  <th className="px-2 py-1 text-left">Item Id</th>
                   <th className="px-2 py-1 text-left">Name</th>
-                  <th className="px-2 py-1 text-left">Brand</th>
-                  <th className="px-2 py-1 text-left">Category</th>
                   <th className="px-2 py-1 text-center">Quantity</th>
                   <th className="px-2 py-1 text-left">Updated By</th>
                   <th className="px-2 py-1 text-left">Remark</th>
@@ -381,9 +380,8 @@ const StockUpdatePage = () => {
                     <td className="px-2 py-1 text-left">
                       {new Date(log.date).toLocaleString()}
                     </td>
+                    <td className="px-2 py-1">{log.item_id}</td>
                     <td className="px-2 py-1">{log.name}</td>
-                    <td className="px-2 py-1">{log.brand}</td>
-                    <td className="px-2 py-1">{log.category}</td>
                     <td className={`px-2 py-1 text-center font-bold ${log.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {log.quantity > 0 ? `+${log.quantity}` : log.quantity}
                     </td>

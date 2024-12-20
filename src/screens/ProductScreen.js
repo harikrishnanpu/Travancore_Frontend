@@ -171,7 +171,13 @@ export default function ProductScreen(props) {
         </div>
         <div className='flex justify-between pt-5'>
         <p
-        onClick={()=> navigate(`/product/${product._id}/edit`)}
+        onClick={()=>{
+          if(userInfo.isAdmin){
+            navigate(`/product/${product._id}/edit`)
+          }else{
+            alert('You need to be admin to edit this product.')
+          }
+        }}
             className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800 dark:focus:ring-red-900 transition-all"
         >
             Edit Product
@@ -179,7 +185,13 @@ export default function ProductScreen(props) {
         </p>
 
         <p
-        onClick={()=> deleteHandler(product)}
+        onClick={()=>{
+            if(userInfo.isAdmin){
+                  deleteHandler(product)
+            }else{
+              alert('You need to be admin to delete this product.')
+            }
+        }}
             className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800 dark:focus:ring-red-900 transition-all">
             <i className="fa fa-trash" />
         </p>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../screens/api';
+import { useSelector } from'react-redux';
 
 export default function OutOfStockModal({
   product,
@@ -10,6 +11,9 @@ export default function OutOfStockModal({
 }) {
   const [newQuantity, setNewQuantity] = useState('');
   const [sqqty, setSqty] = useState(0);
+
+  const userSignin = useSelector((state) => state.userSignin);
+  const { userInfo } = userSignin;
 
 
   useEffect(()=>{
@@ -36,7 +40,8 @@ export default function OutOfStockModal({
       const quantityToUpdate = parseFloat(newQuantity);
   
       const response = await api.put(`/api/products/update-stock/${product._id}`, {
-        countInStock: quantityToUpdate
+        countInStock: quantityToUpdate,
+        userName: userInfo.name
       });
   
       if (response.status === 200) {
