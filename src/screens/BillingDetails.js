@@ -29,8 +29,11 @@ const BillingList = () => {
   const [sortField, setSortField] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // Tab filters: All, Paid, Pending, Overdue, Draft
+  // Tab filters: All, Paid, Pending, Unapproved
   const [statusTab, setStatusTab] = useState('All');
+
+  // Sidebar for filters in mobile
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const userSignin = useSelector((state) => state.userSignin);
   const { userInfo } = userSignin;
@@ -71,7 +74,8 @@ const BillingList = () => {
           billing.invoiceNo.toLowerCase().includes(lowerSearch) ||
           billing.customerName.toLowerCase().includes(lowerSearch) ||
           billing.salesmanName.toLowerCase().includes(lowerSearch) ||
-          billing.marketedBy?.toLowerCase()?.includes(lowerSearch)
+          billing.marketedBy?.toLowerCase()?.includes(lowerSearch) ||
+          billing.showroom?.toLowerCase()?.includes(lowerSearch)
       );
     }
 
@@ -95,26 +99,22 @@ const BillingList = () => {
       });
     }
 
-    // Determine statuses for filters
     const now = new Date();
+    const isUnapproved = (b) => !b.isApproved;
+    const isPaid = (b) => b.paymentStatus === 'Paid';
+    // Now we combine pending and what was previously overdue into a single category: Pending
+    // Pending means: not paid and not unapproved (regardless of due date)
+    const isPending = (b) => !isPaid(b) && !isUnapproved(b);
 
-    // Categories:
-    // Paid: paymentStatus === 'Paid'
-    // Draft: !isApproved
-    // Overdue: expectedDeliveryDate < now && paymentStatus !== 'Paid'
-    // Pending: Not paid, not overdue, not draft
     data = data.filter((billing) => {
-      const isDraft = !billing.isApproved;
-      const isPaid = billing.paymentStatus === 'Paid';
-      const isOverdue =
-        new Date(billing.expectedDeliveryDate) < now && billing.paymentStatus !== 'Paid' && !isDraft;
-      const isPending = !isPaid && !isDraft && !isOverdue;
+      const unapproved = isUnapproved(billing);
+      const paid = isPaid(billing);
+      const pending = isPending(billing);
 
       if (statusTab === 'All') return true;
-      if (statusTab === 'Paid' && isPaid) return true;
-      if (statusTab === 'Pending' && isPending) return true;
-      if (statusTab === 'Overdue' && isOverdue) return true;
-      if (statusTab === 'Draft' && isDraft) return true;
+      if (statusTab === 'Paid' && paid) return true;
+      if (statusTab === 'Pending' && pending) return true;
+      if (statusTab === 'Unapproved' && unapproved) return true;
       return false;
     });
 
@@ -166,37 +166,29 @@ const BillingList = () => {
 
   // Calculate top stats based on filtered data
   const stats = useMemo(() => {
-    const now = new Date();
     let totalAmount = 0;
     let paidInvoices = 0;
     let paidAmount = 0;
     let pendingInvoices = 0;
     let pendingAmount = 0;
-    let overdueInvoices = 0;
-    let overdueAmount = 0;
-    let draftInvoices = 0;
-    let draftAmount = 0;
+    let unapprovedInvoices = 0;
+    let unapprovedAmount = 0;
 
     filteredBillings.forEach((b) => {
       const amount = b.grandTotal || 0;
       totalAmount += amount;
 
-      const isDraft = !b.isApproved;
-      const isPaid = b.paymentStatus === 'Paid';
-      const isOverdue =
-        new Date(b.expectedDeliveryDate) < now && b.paymentStatus !== 'Paid' && !isDraft;
-      const isPending = !isPaid && !isDraft && !isOverdue;
+      const unapproved = !b.isApproved;
+      const paid = b.paymentStatus === 'Paid';
+      const pending = !paid && !unapproved; // includes previously overdue
 
-      if (isPaid) {
+      if (paid) {
         paidInvoices += 1;
         paidAmount += amount;
-      } else if (isOverdue) {
-        overdueInvoices += 1;
-        overdueAmount += amount;
-      } else if (isDraft) {
-        draftInvoices += 1;
-        draftAmount += amount;
-      } else if (isPending) {
+      } else if (unapproved) {
+        unapprovedInvoices += 1;
+        unapprovedAmount += amount;
+      } else if (pending) {
         pendingInvoices += 1;
         pendingAmount += amount;
       }
@@ -209,10 +201,8 @@ const BillingList = () => {
       paidAmount,
       pendingInvoices,
       pendingAmount,
-      overdueInvoices,
-      overdueAmount,
-      draftInvoices,
-      draftAmount,
+      unapprovedInvoices,
+      unapprovedAmount,
     };
   }, [filteredBillings]);
 
@@ -377,6 +367,37 @@ const BillingList = () => {
     setStatusTab('All');
   };
 
+  const toggleSidebar = () => {
+    setShowSidebar((prev) => !prev);
+  };
+
+  const renderStatusIndicator = (billing) => {
+    const { deliveryStatus, paymentStatus } = billing;
+    // For the indicator, we can decide:
+    // green if fully delivered and paid,
+    // yellow if one of them is done and the other not,
+    // red if neither delivered nor paid
+    let color = 'red';
+    if (deliveryStatus === 'Delivered' && paymentStatus === 'Paid') {
+      color = 'green';
+    } else if (
+      (deliveryStatus === 'Delivered' && paymentStatus !== 'Paid') ||
+      (deliveryStatus !== 'Delivered' && paymentStatus === 'Paid')
+    ) {
+      color = 'yellow';
+    }
+
+    return (
+      <span className="relative flex h-3 w-3 mx-auto">
+        <span
+          className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-${color}-400 opacity-75`}
+        ></span>
+        <span
+          className={`relative inline-flex rounded-full h-3 w-3 bg-${color}-500`}
+        ></span>
+      </span>
+    );
+  };
 
   const renderCard = (billing) => (
     <div
@@ -386,34 +407,50 @@ const BillingList = () => {
       <div className="flex justify-between items-center">
         <p
           onClick={() => navigate(`/driver/${billing._id}`)}
-          className={`text-md flex cursor-pointer font-bold ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
+          className={`text-md flex cursor-pointer font-bold ${
+            billing.isApproved ? 'text-red-600' : 'text-yellow-600'
+          }`}
         >
-          {billing.invoiceNo} {billing.isApproved && <img className='h-4 w-4 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
+          {billing.invoiceNo}{' '}
+          {billing.isApproved && (
+            <img
+              className="h-4 w-4 ml-1 mt-1"
+              src="/images/tick.svg"
+              alt="Approved"
+            />
+          )}
         </p>
         <div className="flex items-center">
           {renderStatusIndicator(billing)}
         </div>
       </div>
       <p className="text-gray-600 text-xs mt-2">Customer: {billing.customerName}</p>
-      <p className="text-gray-600 text-xs mt-1">Salesman: {billing.salesmanName}</p>
+      <p className="text-gray-600 text-xs mt-1">Showroom: {billing.showroom}</p>
       <p className="text-gray-600 text-xs mt-1">
-        Expected Delivery:{' '}
-        {new Date(billing.expectedDeliveryDate).toLocaleDateString()}
+        Expected Delivery: {new Date(billing.expectedDeliveryDate).toLocaleString()}
       </p>
+      <p className="text-gray-600 text-xs mt-1">Payment: {billing.paymentStatus}</p>
+      <p className="text-gray-600 text-xs mt-1">Delivery: {billing.deliveryStatus}</p>
       <div className="flex justify-between">
         <p className="text-gray-600 text-xs font-bold mt-1">
           Total Products: {billing.products.length}
         </p>
         <p className="text-gray-400 italic text-xs mt-1">
           Last Edited:{' '}
-          {new Date(billing.updatedAt ? billing.updatedAt : billing.createdAt).toLocaleDateString()}
+          {new Date(
+            billing.updatedAt ? billing.updatedAt : billing.createdAt
+          ).toLocaleDateString()}
         </p>
       </div>
       <div className="flex mt-4 text-xs space-x-2">
         <button
           disabled={!userInfo.isAdmin && billing.isApproved}
           onClick={() => navigate(`/bills/edit/${billing._id}`)}
-          className={`${billing.isApproved && !userInfo.isAdmin ? 'bg-gray-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'} text-white px-3 font-bold py-1 rounded flex items-center`}
+          className={`${
+            billing.isApproved && !userInfo.isAdmin
+              ? 'bg-gray-300 cursor-not-allowed'
+              : 'bg-red-500 hover:bg-red-600'
+          } text-white px-3 font-bold py-1 rounded flex items-center`}
         >
           <i className="fa fa-pen mr-2"></i> Edit
         </button>
@@ -435,16 +472,16 @@ const BillingList = () => {
           onClick={() => handleRemove(billing._id)}
           className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
         >
-          <i className="fa fa-trash mr-2"></i> 
+          <i className="fa fa-trash mr-2"></i>
         </button>
         {userInfo.isAdmin && (
           <>
-            <button
+            {/* <button
               onClick={() => printInvoice(billing)}
               className="bg-red-500 hover:bg-red-600 text-white px-3 font-bold py-1 rounded flex items-center"
             >
               <i className="fa fa-print mr-2"></i>
-            </button>
+            </button> */}
             {!billing.isApproved && (
               <button
                 onClick={() => handleApprove(billing)}
@@ -458,28 +495,6 @@ const BillingList = () => {
       </div>
     </div>
   );
-
-
-  const renderStatusIndicator = (billing) => {
-    const { deliveryStatus, paymentStatus } = billing;
-    let color = 'red';
-    if (deliveryStatus === 'Delivered' && paymentStatus === 'Paid') {
-      color = 'green';
-    } else if (deliveryStatus === 'Delivered' || paymentStatus === 'Paid') {
-      color = 'yellow';
-    }
-
-    return (
-      <span className="relative flex h-3 w-3 mx-auto">
-        <span
-          className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-${color}-400 opacity-75`}
-        ></span>
-        <span
-          className={`relative inline-flex rounded-full h-3 w-3 bg-${color}-500`}
-        ></span>
-      </span>
-    );
-  };
 
   const renderTableSkeleton = () => {
     const skeletonRows = Array.from({ length: itemsPerPage }, (_, index) => index);
@@ -556,7 +571,88 @@ const BillingList = () => {
         </div>
       )}
 
-<div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative">
+      {/* Sidebar for mobile filters */}
+      <div className={`fixed z-50 inset-0 bg-black bg-opacity-50 ${showSidebar ? 'block' : 'hidden'} md:hidden`} onClick={() => setShowSidebar(false)}></div>
+      <div className={`fixed top-0 left-0 h-full bg-white shadow-md p-4 w-64 z-50 transform ${showSidebar ? 'translate-x-0' : '-translate-x-full'} transition-transform md:translate-x-0 md:static md:hidden md:p-0`}>
+        <h2 className="text-md font-bold text-red-600 mb-4">Filters & Sorting</h2>
+        {/* Search */}
+        <div className="mb-4">
+          <label className="block text-xs font-bold mb-1" htmlFor="search">
+            Search
+          </label>
+          <input
+            type="text"
+            id="search"
+            placeholder="Search by Invoice No, Customer, Salesman, Showroom..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+
+        {/* Invoice Start/End Date */}
+        <div className="mb-4">
+          <label className="block text-xs font-bold mb-1" htmlFor="invoiceStartDate">
+            Invoice Start Date
+          </label>
+          <input
+            type="date"
+            id="invoiceStartDate"
+            value={invoiceStartDate}
+            onChange={(e) => setInvoiceStartDate(e.target.value)}
+            className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-xs font-bold mb-1" htmlFor="invoiceEndDate">
+            Invoice End Date
+          </label>
+          <input
+            type="date"
+            id="invoiceEndDate"
+            value={invoiceEndDate}
+            onChange={(e) => setInvoiceEndDate(e.target.value)}
+            className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+
+        {/* Delivery Start/End Date */}
+        <div className="mb-4">
+          <label className="block text-xs font-bold mb-1" htmlFor="deliveryStartDate">
+            Delivery Start Date
+          </label>
+          <input
+            type="datetime-local"
+            id="deliveryStartDate"
+            value={deliveryStartDate}
+            onChange={(e) => setDeliveryStartDate(e.target.value)}
+            className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-xs font-bold mb-1" htmlFor="deliveryEndDate">
+            Delivery End Date
+          </label>
+          <input
+            type="datetime-local"
+            id="deliveryEndDate"
+            value={deliveryEndDate}
+            onChange={(e) => setDeliveryEndDate(e.target.value)}
+            className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={resetFilters}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold"
+          >
+          <i className='fa fa-refresh' />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative">
         <div
           onClick={() => navigate('/')}
           className="text-center cursor-pointer"
@@ -566,7 +662,11 @@ const BillingList = () => {
             All Billings Information And Updation
           </p>
         </div>
-        <i className="fa fa-list text-gray-500" />
+        <button
+          onClick={toggleSidebar}
+        >
+          <i className='fa text-gray-400 fa-filter' />
+        </button>
       </div>
 
       {/* Error Message */}
@@ -576,7 +676,6 @@ const BillingList = () => {
 
       {/* Page Header and Stats */}
       <div className="mb-6 space-y-4">
-
         {/* Stats bar */}
         <div className="flex flex-wrap justify-center sm:justify-start gap-4">
           <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[200px]">
@@ -595,21 +694,16 @@ const BillingList = () => {
             <p className="text-sm font-bold text-gray-700">Rs. {stats.pendingAmount.toFixed(2)}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[200px]">
-            <p className="text-xs font-bold text-red-600">Overdue</p>
-            <p className="text-xs text-gray-500">{stats.overdueInvoices} invoices</p>
-            <p className="text-sm font-bold text-gray-700">Rs. {stats.overdueAmount.toFixed(2)}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[200px]">
-            <p className="text-xs font-bold text-blue-600">Draft</p>
-            <p className="text-xs text-gray-500">{stats.draftInvoices} invoices</p>
-            <p className="text-sm font-bold text-gray-700">Rs. {stats.draftAmount.toFixed(2)}</p>
+            <p className="text-xs font-bold text-blue-600">Unapproved</p>
+            <p className="text-xs text-gray-500">{stats.unapprovedInvoices} invoices</p>
+            <p className="text-sm font-bold text-gray-700">Rs. {stats.unapprovedAmount.toFixed(2)}</p>
           </div>
         </div>
       </div>
 
       {/* Tabs for Status Filter */}
       <div className="flex flex-wrap justify-center sm:justify-start space-x-2 mb-4">
-        {['All', 'Paid', 'Pending', 'Overdue', 'Draft'].map((tab) => (
+        {['All', 'Paid', 'Pending', 'Unapproved'].map((tab) => (
           <button
             key={tab}
             onClick={() => { setStatusTab(tab); setCurrentPage(1); }}
@@ -619,16 +713,17 @@ const BillingList = () => {
                 : 'bg-gray-50 text-red-700 hover:bg-red-100'
             }`}
           >
-            {tab} {tab !== 'All' && tab === 'Paid' && `(${stats.paidInvoices})`}
-            {tab !== 'All' && tab === 'Pending' && `(${stats.pendingInvoices})`}
-            {tab !== 'All' && tab === 'Overdue' && `(${stats.overdueInvoices})`}
-            {tab !== 'All' && tab === 'Draft' && `(${stats.draftInvoices})`}
+            {tab} 
+            {tab !== 'All' && tab === 'Paid' && ` (${stats.paidInvoices})`}
+            {tab !== 'All' && tab === 'Pending' && ` (${stats.pendingInvoices})`}
+            {tab !== 'All' && tab === 'Unapproved' && ` (${stats.unapprovedInvoices})`}
           </button>
         ))}
       </div>
 
-      {/* Search and Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+      {/* On desktop, filters are shown inline, on mobile they are in sidebar */}
+      <div className="hidden md:block bg-white p-4 rounded-lg shadow-md mb-6">
+        {/* Desktop Filters and Sorting */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:flex-wrap sm:space-y-0 sm:space-x-4">
           {/* Search */}
           <div className="flex-1 min-w-[200px]">
@@ -638,7 +733,7 @@ const BillingList = () => {
             <input
               type="text"
               id="search"
-              placeholder="Search by Invoice No, Customer, Salesman..."
+              placeholder="Search by Invoice No, Customer, Salesman, Showroom..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
@@ -697,43 +792,14 @@ const BillingList = () => {
             />
           </div>
 
-          {/* Sort */}
-          <div className="min-w-[200px]">
-            <label className="block text-xs font-bold mb-1" htmlFor="sortField">
-              Sort By
-            </label>
-            <div className="flex items-center space-x-1">
-              <select
-                id="sortField"
-                value={sortField}
-                onChange={(e) => setSortField(e.target.value)}
-                className="w-full border border-red-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400"
-              >
-                <option value="">None</option>
-                <option value="invoiceNo">Invoice No</option>
-                <option value="invoiceDate">Invoice Date</option>
-                <option value="expectedDeliveryDate">Expected Delivery Date</option>
-                <option value="customerName">Customer Name</option>
-                <option value="salesmanName">Salesman Name</option>
-                <option value="grandTotal">Amount</option>
-              </select>
-              <button
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="bg-red-200 rounded px-2 py-2 text-xs flex justify-center items-center focus:outline-none focus:ring-2 focus:ring-red-400"
-              >
-                {sortOrder === 'asc' ? '↑' : '↓'}
-              </button>
-            </div>
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={resetFilters}
+              className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded text-xs font-bold"
+            >
+            <i className='fa fa-refresh' />
+            </button>
           </div>
-        </div>
-
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={resetFilters}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold"
-          >
-            Reset Filters
-          </button>
         </div>
       </div>
 
@@ -755,177 +821,211 @@ const BillingList = () => {
         <>
           {/* Table view for large screens */}
           <div className="hidden md:block">
-          <table className="w-full text-xs text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
-                  <thead className="bg-red-600 text-xs text-white">
-                    <tr className="divide-y">
-                      <th className="px-4 py-2 text-left">Status</th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('invoiceNo');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Invoice No {sortField === 'invoiceNo' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('invoiceDate');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Invoice Date {sortField === 'invoiceDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('deliveryDate');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Delivery Date {sortField === 'deliveryDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
+            <table className="w-full text-xs text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
+              <thead className="bg-red-600 text-xs text-white">
+                <tr className="divide-y">
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('invoiceNo');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Invoice No {sortField === 'invoiceNo' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('invoiceDate');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Invoice Date {sortField === 'invoiceDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('expectedDeliveryDate');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Delivery Date {sortField === 'expectedDeliveryDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
 
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('showroom');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Showroom {sortField === 'showroom' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
 
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('showroom');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                       Showroom {sortField === 'showroom' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('salesmanName');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Salesman Name {sortField === 'salesmanName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
 
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('salesmanName');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Salesman Name {sortField === 'salesmanName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('customerName');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Customer Name {sortField === 'customerName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
 
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('products.length');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Products {sortField === 'products.length' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
 
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('customerName');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Customer Name {sortField === 'customerName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th
-                        className="px-2 py-2 cursor-pointer"
-                        onClick={() => {
-                          setSortField('products.length');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        Products {sortField === 'products.length' && (sortOrder === 'asc' ? '↑' : '↓')}
-                      </th>
-                      <th className="px-2 py-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedBillings.map((billing) => (
-                      <tr
-                        key={billing.invoiceNo}
-                        className="hover:bg-gray-100 divide-y divide-x"
-                      >
-                        <td className="px-4 py-2 text-center">
-                          {renderStatusIndicator(billing)}
-                        </td>
-                        <td
-                          onClick={() => navigate(`/driver/${billing._id}`)}
-                          className={`px-2 cursor-pointer flex text-xs font-bold py-2 ${billing.isApproved ? 'text-red-600' : 'text-yellow-600'}`}
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('paymentStatus');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Payment Status {sortField === 'paymentStatus' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+                  
+                  <th
+                    className="px-2 py-2 cursor-pointer"
+                    onClick={() => {
+                      setSortField('deliveryStatus');
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    Delivery Status {sortField === 'deliveryStatus' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
+
+                  <th className="px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedBillings.map((billing) => (
+                  <tr
+                    key={billing.invoiceNo}
+                    className="hover:bg-gray-100 divide-y divide-x"
+                  >
+                    <td className="px-4 py-2 text-center">
+                      {renderStatusIndicator(billing)}
+                    </td>
+                    <td
+                      onClick={() => navigate(`/driver/${billing._id}`)}
+                      className={`px-2 cursor-pointer flex text-xs font-bold py-2 ${
+                        billing.isApproved ? 'text-red-600' : 'text-yellow-600'
+                      }`}
+                    >
+                      {billing.invoiceNo}{' '}
+                      {billing.isApproved && (
+                        <img
+                          className="h-2 w-2 ml-1 mt-1"
+                          src="/images/tick.svg"
+                          alt="Approved"
+                        />
+                      )}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      {new Date(billing.invoiceDate).toLocaleDateString()}
+                    </td>
+
+                    <td className="px-2 text-xs py-2">
+                      {new Date(billing.expectedDeliveryDate).toLocaleString()}
+                    </td>
+
+                    <td className="px-2 text-xs py-2">
+                      {billing.showroom}
+                    </td>
+
+                    <td className="px-2 text-xs py-2">
+                      {billing.salesmanName}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      {billing.customerName}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      {billing.products.length}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      {billing.paymentStatus}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      {billing.deliveryStatus}
+                    </td>
+                    <td className="px-2 text-xs py-2">
+                      <div className="flex mt-2 text-xs space-x-1">
+                        {userInfo.isAdmin && (
+                          <button
+                            onClick={() => navigate(`/bills/edit/${billing._id}`)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                          >
+                            <i className="fa fa-pen mr-1"></i> Edit
+                          </button>
+                        )}
+                        {userInfo.isAdmin && (
+                          <button
+                            onClick={() => generatePDF(billing)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                          >
+                            <i className="fa fa-truck mr-1"></i>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleView(billing)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
                         >
-                          {billing.invoiceNo} {billing.isApproved && <img className='h-2 w-2 ml-1 mt-1' src='/images/tick.svg' alt="Approved" />}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {new Date(billing.invoiceDate).toLocaleDateString()}
-                        </td>
-
-                        <td className="px-2 text-xs py-2">
-                          {new Date(billing.expectedDeliveryDate).toLocaleDateString()}
-                        </td>
-
-                        <td className="px-2 text-xs py-2">
-                          {billing.showroom}
-                        </td>
-
-
-                        <td className="px-2 text-xs py-2">
-                          {billing.salesmanName}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {billing.customerName}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          {billing.products.length}
-                        </td>
-                        <td className="px-2 text-xs py-2">
-                          <div className="flex mt-2 text-xs space-x-1">
-                            {userInfo.isAdmin && (
-                              <button
-                                onClick={() => navigate(`/bills/edit/${billing._id}`)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                              >
-                                <i className="fa fa-pen mr-1"></i> Edit
-                              </button>
-                            )}
-                            {userInfo.isAdmin && (
-                              <button
-                                onClick={() => generatePDF(billing)}
-                                className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                              >
-                                <i className="fa fa-truck mr-1"></i> PDF
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleView(billing)}
+                          <i className="fa fa-eye mr-1"></i> View
+                        </button>
+                        <button
+                          onClick={() => handleRemove(billing._id)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                        >
+                          <i className="fa fa-trash mr-1"></i> Delete
+                        </button>
+                        {userInfo.isAdmin && (
+                          <>
+                            {/* <button
+                              onClick={() => printInvoice(billing)}
                               className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
                             >
-                              <i className="fa fa-eye mr-1"></i> View
-                            </button>
-                            <button
-                              onClick={() => handleRemove(billing._id)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                            >
-                              <i className="fa fa-trash mr-1"></i> Delete
-                            </button>
-                            {userInfo.isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => printInvoice(billing)}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                                >
-                                  <i className="fa fa-print mr-1"></i> Print
-                                </button>
-                                {!billing.isApproved && (
-                                  <button
-                                    onClick={() => handleApprove(billing)}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-2 font-bold py-1 rounded flex items-center"
-                                  >
-                                    Approve
-                                  </button>
-                                )}
-                              </>
+                              <i className="fa fa-print mr-1"></i> Print
+                            </button> */}
+                            {!billing.isApproved && (
+                              <button
+                                onClick={() => handleApprove(billing)}
+                                className="bg-green-500 hover:bg-green-600 text-white px-2 font-bold py-1 rounded flex items-center"
+                              >
+                                Approve
+                              </button>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Card view for small screens */}
           <div className="md:hidden">
-          {paginatedBillings.map(renderCard)}
+            {paginatedBillings.map(renderCard)}
           </div>
 
           {/* Pagination */}
@@ -995,6 +1095,10 @@ const BillingList = () => {
                   <p className="mb-1">
                     Customer Contact:{' '}
                     <span className="text-gray-700">{selectedBilling.customerContactNumber}</span>
+                  </p>
+                  <p className="mb-1">
+                    Showroom:{' '}
+                    <span className="text-gray-700">{selectedBilling.showroom}</span>
                   </p>
                 </div>
                 <div>
@@ -1093,7 +1197,7 @@ const BillingList = () => {
                 <p className="text-sm mb-1">
                   Sub Total:{' '}
                   <span className="text-gray-600">
-                    Rs. {((parseFloat(selectedBilling.grandTotal) / 1.18)).toFixed(2)}
+                    Rs. {(parseFloat(selectedBilling.grandTotal) / 1.18).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-sm mb-1">

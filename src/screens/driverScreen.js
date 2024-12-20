@@ -390,7 +390,7 @@ const DriverPage = () => {
   
   billings.map((bill)=>(
     
-    <div className="max-w-2xl mx-auto  p-5 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+    <div className="max-w-2xl mx-auto  p-5 bg-white border border-gray-200 rounded-lg shadow">
 
 <div className="flex justify-center gap-8">
         <button
@@ -532,8 +532,8 @@ const DriverPage = () => {
 
 <div className="relative overflow-hidden">
   <p className="font-bold mb-4 text-sm">Total Products: {bill.products?.length}</p>
-    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead className="text-xs rounded-lg text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+    <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+        <thead className="text-xs rounded-lg text-gray-700 uppercase bg-gray-50">
             <tr>
                 <th scope="col" className="px-4 text-xs py-3">
                     Product
@@ -554,9 +554,9 @@ const DriverPage = () => {
         </thead>
         <tbody>
           {bill?.products.map((product,index)=>(
-            <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                <th scope="row" className="px-2 py-4 text-xs  text-gray-900 whitespace-nowrap dark:text-white">
-                    {product.name.slice(0,14)}...
+            <tr key={index} className="bg-white border-b">
+                <th scope="row" className="px-2 py-4 text-xs  text-gray-900 whitespace-nowrap">
+                    {product.name}
                </th>
                 <td className="px-6 text-center text-xs py-4">
                     {product.item_id}
@@ -572,6 +572,7 @@ const DriverPage = () => {
                               type="checkbox"
                               className="text-green-500 focus:ring-0 focus:outline-0 focus:border-0"
                               checked={product.deliveryStatus === "Delivered"}
+                              readOnly
                             />
                 </td>
             </tr> 
@@ -602,105 +603,48 @@ const DriverPage = () => {
 
 
 {activeSection === "allpayments" && (
-<div>
+  <div className="mt-6">
+                  <h3 className="text-md font-bold text-gray-600 mb-2">Previous Payments</h3>
+                  
+                  {/* List of payments */}
+                  <ul className="divide-y divide-gray-200 mb-4">
+                    {billings.payments?.map((payment, index) => (
+                      <li key={index} className="py-2 text-xs">
+                        <p className="text-sm text-gray-700 font-semibold">
+                          {payment.method}: {payment.amount.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(payment.date).toLocaleString()}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
 
-<div className="mt-6">
-    <h3 className="text-md font-bold text-gray-600 mb-2">All Payment Transactions</h3>
+                  {/* Other Expenses */}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-bold text-gray-600 mb-2">Other Expenses</h4>
+                    <ul className="divide-y divide-gray-200 mb-4">
+                    {bill.payments?.map((payment, index) => (
+                      <li key={index} className="py-2 text-xs">
+                        <p className="text-sm text-gray-700 font-semibold">
+                          {payment.method}: {payment.amount.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(payment.date).toLocaleString()}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  </div>
 
-
-    <div className="mt-4 border-t border-gray-200 pt-4">
-      <p className="text-xs text-gray-500 font-semibold">
-        Total Fuel Expenses: Rs. {bill.fuelCharge.toFixed(2)}
-      </p>
-      <p className="text-xs mt-1 text-gray-500 font-semibold">
-        Total Other Expenses: Rs. {bill.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0).toFixed(2)}
-      </p>
-      <p className="text-xs mt-1 text-gray-500 font-semibold">
-        Grand Total (Fuel + Other Expenses): Rs.
-        {(
-          bill.fuelCharge +
-          (bill.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0)
-        ).toFixed(2)}
-      </p>
-    </div>
-
-    {/* Payment Summary Section */}
-    <div className="mt-4 border-t border-b pb-8 border-gray-200 pt-4">
-      <h4 className="text-md font-bold text-gray-700">Payment Summary</h4>
-
-      {/* Total Payments In */}
-      <p className="text-xs mt-2 text-gray-500 font-semibold">
-        Total Payments In: Rs.
-        {bill.payments?.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}
-      </p>
-
-      {/* Net Balance (Total In - Total Out) */}
-      <p className="text-xs mt-1 text-gray-500 font-semibold">
-        Net Balance (In - Expenses): Rs.
-        {(
-          bill.payments?.reduce((sum, payment) => sum + payment.amount, 0) -
-          (bill.fuelCharge +
-            (bill.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0))
-        ).toFixed(2)}
-      </p>
-    </div>
-    
-    <p className="text-sm font-bold text-gray-600 mt-4 mb-2">Transactions</p>
-    {/* List of payments */}
-    <ul className="divide-y divide-gray-200 mb-4">
-      {bill.payments?.map((payment, index) => (
-        <li key={index} className="py-2">
-          <p className="text-sm text-gray-700 font-semibold">
-            {payment.method}: Rs. {payment.amount.toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-500">
-            {new Date(payment.date).toLocaleDateString()}
-          </p>
-        </li>
-      ))}
-    </ul>
-
-    {/* Fuel Charge */}
-    <div className="py-2 border-t border-gray-200">
-      <p className="text-sm text-gray-700 font-semibold">
-        Fuel Charge: Rs. {bill.fuelCharge.toFixed(2)}
-      </p>
-    </div>
-
-    {/* Other Expenses */}
-    <div className="mt-4">
-      <h4 className="text-sm font-bold text-gray-600 mb-2">Other Expenses</h4>
-      <ul className="divide-y divide-gray-200">
-        {bill?.otherExpenses?.map((expense, index) => (
-          <li key={index} className="py-2">
-            <p className="text-sm text-gray-700 font-semibold">
-              Rs. {expense.amount.toFixed(2)} - {expense.remark}
-            </p>
-            <p className="text-xs text-gray-500">
-              {new Date(expense.date).toLocaleDateString()}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </div>
-
-    {/* Total for Fuel and Other Expenses */}
-    <div className="mt-4 border-t border-gray-200 pt-4">
-      <p className="text-sm text-gray-800 font-semibold">
-        Total Other Expenses: Rs.
-        {bill?.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0).toFixed(2)}
-      </p>
-      <p className="text-sm text-gray-800 font-semibold">
-        Grand Total (Fuel + Other Expenses): Rs.
-        {(
-          bill?.fuelCharge +
-          (bill.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0)
-        ).toFixed(2)}
-      </p>
-    </div>
-  </div>
-
-  </div> )}
+                  {/* Total Other Expenses */}
+                  <div className="mt-4 border-t border-gray-200 pt-4 text-xs">
+                    <p className="text-sm text-gray-800 font-semibold">
+                      Total Other Expenses:{" "}
+                      {bill.otherExpenses?.reduce((sum, expense) => sum + expense.amount, 0).toFixed(2)}
+                    </p>
+                  </div>
+                </div>)}
 
 {activeSection === "delivery" && (
   <div className="rounded-lg">

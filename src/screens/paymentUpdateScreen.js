@@ -138,6 +138,23 @@ const EmployeePaymentExpensePage = () => {
     }
   };
 
+
+  const handleDeleteExpense = async (expenseId) => {
+    if (!billingDetails) return;
+  
+    setIsLoading(true);
+    try {
+      await api.delete(`/api/billing/billing/${billingDetails._id}/deleteExpense/${expenseId}`);
+      await handleFetchBilling(billingDetails._id); // Refresh billing details after deletion
+      setError("");
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      setError("Error deleting expense. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddExpenses = async () => {
     if (!billingDetails) return;
 
@@ -508,20 +525,28 @@ const EmployeePaymentExpensePage = () => {
 
                   {/* Other Expenses */}
                   <div className="mt-4">
-                    <h4 className="text-sm font-bold text-gray-600 mb-2">Other Expenses</h4>
-                    <ul className="divide-y divide-gray-200 text-xs">
-                      {billingDetails.otherExpenses?.map((expense, index) => (
-                        <li key={index} className="py-2">
-                          <p className="text-sm text-gray-700 font-semibold">
-                            {expense.amount.toFixed(2)} - {expense.remark}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(expense.date).toLocaleString()}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+      <h4 className="text-sm font-bold text-gray-600 mb-2">Other Expenses</h4>
+      <ul className="divide-y divide-gray-200 text-xs">
+        {billingDetails.otherExpenses?.map((expense, index) => (
+          <li key={index} className="py-2 flex justify-between items-center">
+            <div>
+              <p className="text-sm text-gray-700 font-semibold">
+                {expense.amount.toFixed(2)} - {expense.remark}
+              </p>
+              <p className="text-xs text-gray-500">
+                {new Date(expense.date).toLocaleString()}
+              </p>
+            </div>
+            <button
+              className="text-xs text-red-500 hover:text-red-700"
+              onClick={() => handleDeleteExpense(expense._id)}
+            >
+              <i className="fa fa-trash" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
 
                   {/* Total Other Expenses */}
                   <div className="mt-4 border-t border-gray-200 pt-4 text-xs">
