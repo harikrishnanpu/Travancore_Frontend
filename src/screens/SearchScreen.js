@@ -8,6 +8,12 @@ import Product from '../components/Product';
 import SearchBox from '../components/SearchBox';
 import SkeletonProduct from '../components/SkeletonProduct';
 import api from './api';
+import {
+  PRODUCT_CREATE_RESET,
+  PRODUCT_DELETE_RESET,
+} from '../constants/productConstants';
+import { createProduct, listProducts } from '../actions/productActions';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function SearchScreen() {
   const navigate = useNavigate();
@@ -45,6 +51,16 @@ export default function SearchScreen() {
   const [page, setPage] = useState(pageNumber);
   const [pages, setPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+
+  const dispatch = useDispatch();
+
+  const productCreate = useSelector((state) => state.productCreate);
+  const {
+    loading: loadingCreate,
+    error: errorCreate,
+    success: successCreate,
+    product: createdProduct,
+  } = productCreate;
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -197,8 +213,41 @@ export default function SearchScreen() {
     navigate(getFilterUrl({ rating: e.target.value, page: 1 }));
   };
 
+
+  useEffect(() => {
+    if (successCreate) {
+      console.log('Product created successfully:', createdProduct);
+      dispatch({ type: PRODUCT_CREATE_RESET });
+      if (createdProduct?._id) {
+        navigate(`/product/${createdProduct._id}/edit`);
+      } else {
+        console.error('Product creation failed: Missing product ID.');
+        alert('Product creation failed: Missing product ID.');
+      }
+    } else if (errorCreate) {
+      console.error('Product creation failed:', errorCreate);
+      alert('Failed to create product: ' + errorCreate);
+    }
+  }, [createdProduct, dispatch, navigate, successCreate, errorCreate]);
+  
+  
+  
+
+  const createHandler = async () => {
+    try {
+      dispatch(createProduct());
+    } catch (err) {
+      console.error('Error creating product:', err.message);
+    }
+  };
+  
+
+
   return (
     <div className="container mx-auto p-2">
+      {loadingCreate && <LoadingBox />}
+{errorCreate && <MessageBox variant="danger">{errorCreate}</MessageBox>}
+
       {/* Top Banner */}
       <div
         onClick={() => {
@@ -212,7 +261,17 @@ export default function SearchScreen() {
             Products and Management
           </p>
         </div>
-        <i className="fa fa-box text-gray-500" />
+        <button
+  type="button"
+  className="bg-red-500 font-bold text-sm text-white py-2 px-2 rounded-lg hover:bg-red-600 transition-all duration-200 shadow-lg"
+  onClick={(e) => {
+    e.stopPropagation(); // Prevents the click event from bubbling up to the parent div
+    createHandler();
+  }}
+>
+  + Add Product
+</button>
+
       </div>
 
       <div className="flex">

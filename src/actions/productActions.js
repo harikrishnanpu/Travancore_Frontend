@@ -75,31 +75,24 @@ export const detailsProduct = (productId) => async (dispatch) => {
     });
   }
 };
+
 export const createProduct = () => async (dispatch, getState) => {
   dispatch({ type: PRODUCT_CREATE_REQUEST });
-  const {
-    userSignin: { userInfo },
-  } = getState();
   try {
-    const { data } = await api.post(
-      '/api/products',
-      {},
-      {
-        headers: { Authorization: `Bearer ${userInfo.token}` },
-      }
-    );
-    dispatch({
-      type: PRODUCT_CREATE_SUCCESS,
-      payload: data.product,
+    const { userSignin: { userInfo } } = getState();
+    const { data } = await api.post('/api/products', {}, {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
     });
+    dispatch({ type: PRODUCT_CREATE_SUCCESS, payload: data });
   } catch (error) {
-    const message =
-      error.response && error.response.data.message
-        ? error.response.data.message
-        : error.message;
-    dispatch({ type: PRODUCT_CREATE_FAIL, payload: message });
+    dispatch({
+      type: PRODUCT_CREATE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
   }
 };
+
+
 export const updateProduct = (product) => async (dispatch, getState) => {
   dispatch({ type: PRODUCT_UPDATE_REQUEST, payload: product });
   const {

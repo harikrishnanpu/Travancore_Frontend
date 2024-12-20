@@ -1,36 +1,17 @@
-// src/screens/ProductEditScreen.jsx
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { detailsProduct, updateProduct } from '../actions/productActions';
+import LoadingBox from '../components/LoadingBox';
+import MessageBox from '../components/MessageBox';
 import { PRODUCT_UPDATE_RESET } from '../constants/productConstants';
 import api from './api';
 
-import LoadingBox from '../components/LoadingBox';
-import MessageBox from '../components/MessageBox';
-
-import {
-  TextField,
-  Button,
-  IconButton,
-  Card,
-  CardMedia,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
-
-import SuccessModal from '../components/successModalnew';
-import ErrorModal from '../components/ErrorModal';
-
-export default function ProductEditScreen() {
+export default function ProductEditScreen(props) {
   const navigate = useNavigate();
   const params = useParams();
   const { id: productId } = params;
-
-  const dispatch = useDispatch();
-
-  // Form Fields State
+  
   const [name, setName] = useState('');
   const [itemId, setItemId] = useState('');
   const [seller, setSeller] = useState('');
@@ -53,18 +34,9 @@ export default function ProductEditScreen() {
   const [sellerAddress, setSellerAddress] = useState('');
   const [type, setType] = useState('');
   const [countInStock, setCountInStock] = useState('');
-
+  const [rating, setRating] = useState('');
   const [imageError, setImageError] = useState(false);
-  const [loadingUpload, setLoadingUpload] = useState(false);
-  const [errorUpload, setErrorUpload] = useState('');
 
-  // Modal States
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Redux State
   const productDetails = useSelector((state) => state.productDetails);
   const { loading, error, product } = productDetails;
 
@@ -75,13 +47,11 @@ export default function ProductEditScreen() {
     success: successUpdate,
   } = productUpdate;
 
+  const dispatch = useDispatch();
   useEffect(() => {
     if (successUpdate) {
-      setSuccessMessage('Product updated successfully!');
-      setShowSuccessModal(true);
-      dispatch({ type: PRODUCT_UPDATE_RESET });
+      navigate('/search/name');
     }
-
     if (!product || product._id !== productId || successUpdate) {
       dispatch({ type: PRODUCT_UPDATE_RESET });
       dispatch(detailsProduct(productId));
@@ -98,21 +68,21 @@ export default function ProductEditScreen() {
       setPsRatio(product.psRatio);
       setLength(product.length);
       setBreadth(product.breadth);
-      setActLength(product.actLength || '');
-      setActBreadth(product.actBreadth || '');
+      setActLength(product.actLength);
+      setActBreadth(product.actBreadth);
       setSize(product.size);
       setUnit(product.unit);
       setPrice(product.price);
-      setBillPartPrice(product.billPartPrice || '');
-      setCashPartPrice(product.cashPartPrice || '');
-      setSellerAddress(product.sellerAddress || '');
-      setType(product.type || '');
+      setBillPartPrice(product.billPartPrice);
+      setCashPartPrice(product.cashPartPrice);
+      setSellerAddress(product.sellerAddress);
+      setType(product.type);
       setCountInStock(product.countInStock);
+      setRating(product.rating);
     }
-  }, [product, dispatch, productId, successUpdate]);
+  }, [product, dispatch, productId, successUpdate, navigate]);
 
-  const submitHandler = (e) => {
-    e.preventDefault();
+  const submitHandler = () => {
     dispatch(
       updateProduct({
         _id: productId,
@@ -138,18 +108,20 @@ export default function ProductEditScreen() {
         sellerAddress,
         type,
         countInStock,
+        rating,
       })
     );
   };
 
+  const [loadingUpload, setLoadingUpload] = useState(false);
+  const [errorUpload, setErrorUpload] = useState('');
+
   const uploadFileHandler = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', 'ml_default');
-
     setLoadingUpload(true);
     try {
       const response = await api.post(
@@ -158,275 +130,326 @@ export default function ProductEditScreen() {
       );
       setImage(response.data.secure_url);
       setLoadingUpload(false);
-      setImageError(false);
     } catch (error) {
       setErrorUpload(error.message);
       setLoadingUpload(false);
     }
   };
 
-  const handleCloseSuccessModal = () => {
-    setShowSuccessModal(false);
-    navigate('/'); // Redirect to home after closing the success modal
-  };
-
-  const handleCloseErrorModal = () => {
-    setShowErrorModal(false);
-  };
-
-  // Trigger error modal if there's an errorUpdate or error
-  useEffect(() => {
-    if (errorUpdate) {
-      setErrorMessage(errorUpdate);
-      setShowErrorModal(true);
-    } else if (error) {
-      setErrorMessage(error);
-      setShowErrorModal(true);
-    }
-  }, [errorUpdate, error]);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-10 px-4">
-      {/* Top Banner */}
-      <div
-        className="w-full max-w-6xl flex items-center justify-between bg-gradient-to-r from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-6 cursor-pointer"
-        onClick={() => navigate('/')}
-      >
-        <div className="text-center">
-          <Typography variant="h5" className="font-bold text-red-600">
-            KK TRADING
-          </Typography>
-          <Typography variant="body2" className="text-gray-500 font-semibold uppercase tracking-wider">
-            Product Management
-          </Typography>
+    <div className="container mx-auto max-w-3xl p-4">
+      {/* Header Section */}
+      <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative">
+        <div onClick={() => { navigate('/'); }} className="text-center cursor-pointer">
+          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <p className="text-gray-400 text-xs font-bold">Product Updations</p>
         </div>
-        <i className="fa fa-box text-gray-500 text-3xl" />
+        <i className="fa fa-box text-gray-500" />
       </div>
 
-      {/* Loading and Error States */}
-      {(loadingUpdate || loading) && <LoadingBox />}
-      {(errorUpdate || error) && <MessageBox variant="danger">{error || errorUpdate}</MessageBox>}
+      {/* Update Button */}
+      <div className="text-right mb-4">
+        <button
+          onClick={() => submitHandler()}
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-6 text-xs rounded"
+        >
+          Update
+        </button>
+      </div>
 
-      {/* Success and Error Modals */}
-      <SuccessModal
-        open={showSuccessModal}
-        onClose={handleCloseSuccessModal}
-        message={successMessage}
-      />
-      <ErrorModal
-        open={showErrorModal}
-        onClose={handleCloseErrorModal}
-        message={errorMessage}
-      />
-
-      {/* Product Edit Form */}
-      {!loading && !error && (
-        <Card className="w-full max-w-6xl shadow-lg rounded-lg p-6 bg-white">
-          {/* Form Header */}
-          <div className="flex items-center justify-between border-b pb-4 mb-6">
-            <div>
-              <Typography variant="h6" className="font-semibold text-gray-700">
-                Edit Product
-              </Typography>
-              <Typography variant="body2" className="text-gray-400">
-                Update product details and save changes
-              </Typography>
-            </div>
-            {loadingUpdate && <CircularProgress size={24} />}
-          </div>
-
-          <form onSubmit={submitHandler}>
+      {/* Form Section */}
+      <div className="form bg-white shadow-md rounded-lg p-4">
+        {loadingUpdate && <LoadingBox />}
+        {errorUpdate && <MessageBox variant="danger">{errorUpdate}</MessageBox>}
+        {loading ? (
+          <LoadingBox />
+        ) : error ? (
+          <MessageBox variant="danger">{error}</MessageBox>
+        ) : (
+          <>
             {/* Image Upload Section */}
-            <div className="mb-6 relative">
-              <div className="relative w-full h-60 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+            <div className="relative mb-4">
+              <div className="mx-auto h-36 bg-gray-50 rounded-lg flex items-center justify-center relative overflow-hidden">
                 {loadingUpload ? (
-                  <CircularProgress />
+                  <LoadingBox />
                 ) : image && !imageError ? (
-                  <CardMedia
-                    component="img"
-                    image={image}
-                    alt="product"
-                    className="object-cover h-full w-full"
+                  <img
+                    src={image}
                     onError={() => setImageError(true)}
+                    alt="product"
+                    className="object-cover rounded-lg w-full h-full"
                   />
                 ) : (
-                  <Typography variant="body2" className="text-gray-400 animate-pulse">
-                    No image
-                  </Typography>
+                  <div className="flex justify-center">
+                    <p className="text-gray-400 animate-pulse text-xs">No image</p>
+                  </div>
                 )}
-                <IconButton
-                  component="label"
-                  className="!absolute bottom-3 right-3 bg-white hover:bg-gray-100 shadow p-1 rounded-full"
+                <label
+                  htmlFor="imageFile"
+                  className="absolute bottom-2 right-2 font-bold text-xs bg-red-500 text-white px-2 py-1 rounded-lg cursor-pointer"
                 >
-                  <EditIcon className="text-red-500" />
-                  <input type="file" hidden onChange={uploadFileHandler} />
-                </IconButton>
+                  <i className="fa fa-edit" />
+                </label>
+                <input
+                  type="file"
+                  id="imageFile"
+                  className="hidden"
+                  onChange={uploadFileHandler}
+                />
+                {errorUpload && <MessageBox variant="danger">{errorUpload}</MessageBox>}
               </div>
-              {errorUpload && (
-                <MessageBox variant="danger">{errorUpload}</MessageBox>
-              )}
             </div>
 
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-              <TextField
-                size="small"
-                label="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                label="Item ID"
-                value={itemId}
-                onChange={(e) => setItemId(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                label="Brand"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                label="Category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                label="Seller"
-                value={seller}
-                onChange={(e) => setSeller(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="P Unit"
-                value={pUnit}
-                onChange={(e) => setPUnit(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="S Unit"
-                value={sUnit}
-                onChange={(e) => setSUnit(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="P S Ratio"
-                value={psRatio}
-                onChange={(e) => setPsRatio(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Length"
-                value={length}
-                onChange={(e) => setLength(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Breadth"
-                value={breadth}
-                onChange={(e) => setBreadth(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Actual Length"
-                value={actLength}
-                onChange={(e) => setActLength(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Actual Breadth"
-                value={actBreadth}
-                onChange={(e) => setActBreadth(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Size"
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-              />
-              <TextField
-                size="small"
-                label="Unit"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="Price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="Bill Part Price"
-                value={billPartPrice}
-                onChange={(e) => setBillPartPrice(e.target.value)}
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="Cash Part Price"
-                value={cashPartPrice}
-                onChange={(e) => setCashPartPrice(e.target.value)}
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="Count In Stock"
-                value={countInStock}
-                onChange={(e) => setCountInStock(e.target.value)}
-                required
-              />
-              <TextField
-                size="small"
-                label="Seller Address"
-                value={sellerAddress}
-                onChange={(e) => setSellerAddress(e.target.value)}
-              />
-            </div>
+            {/* Input Fields Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Name */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Name</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
 
-            {/* Description */}
-            <div className="mb-6">
-              <TextField
-                label="Description"
-                multiline
-                rows={4}
-                fullWidth
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
+              {/* Item ID */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Item ID</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={itemId}
+                  onChange={(e) => setItemId(e.target.value)}
+                />
+              </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end">
-              <Button
-                variant="contained"
-                color="error"
-                type="submit"
-                className="px-6 py-2"
-              >
-                Update
-              </Button>
+              {/* Brand */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Brand</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                />
+              </div>
+
+              {/* Category */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Category</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                />
+              </div>
+
+              {/* Description */}
+              <div className="form-group flex flex-col md:col-span-2">
+                <label className="text-xs text-gray-500 mb-1">Description</label>
+                <input
+                type='text'
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+
+              {/* Price */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Price</label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </div>
+
+              {/* Count In Stock */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Count In Stock</label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={countInStock}
+                  onChange={(e) => setCountInStock(e.target.value)}
+                />
+              </div>
+
+              {/* Seller */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Seller</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={seller}
+                  onChange={(e) => setSeller(e.target.value)}
+                />
+              </div>
+
+              {/* Seller Address */}
+              <div className="form-group flex flex-col md:col-span-2">
+                <label className="text-xs text-gray-500 mb-1">Seller Address</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={sellerAddress}
+                  onChange={(e) => setSellerAddress(e.target.value)}
+                />
+              </div>
+
+              {/* Type */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Type</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                />
+              </div>
+
+              {/* pUnit */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">P Unit</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={pUnit}
+                  onChange={(e) => setPUnit(e.target.value)}
+                />
+              </div>
+
+              {/* sUnit */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">S Unit</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={sUnit}
+                  onChange={(e) => setSUnit(e.target.value)}
+                />
+              </div>
+
+              {/* psRatio */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">P S Ratio</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={psRatio}
+                  onChange={(e) => setPsRatio(e.target.value)}
+                />
+              </div>
+
+              {/* Length */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Length</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={length}
+                  onChange={(e) => setLength(e.target.value)}
+                />
+              </div>
+
+              {/* Breadth */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Breadth</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={breadth}
+                  onChange={(e) => setBreadth(e.target.value)}
+                />
+              </div>
+
+              {/* Act Length */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Actual Length</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={actLength}
+                  onChange={(e) => setActLength(e.target.value)}
+                />
+              </div>
+
+              {/* Act Breadth */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Actual Breadth</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={actBreadth}
+                  onChange={(e) => setActBreadth(e.target.value)}
+                />
+              </div>
+
+              {/* Size */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Size</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                />
+              </div>
+
+              {/* Unit */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Unit</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                />
+              </div>
+
+              {/* Bill Part Price */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Bill Part Price</label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={billPartPrice}
+                  onChange={(e) => setBillPartPrice(e.target.value)}
+                />
+              </div>
+
+              {/* Cash Part Price */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Cash Part Price</label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={cashPartPrice}
+                  onChange={(e) => setCashPartPrice(e.target.value)}
+                />
+              </div>
+
+              {/* Rating */}
+              <div className="form-group flex flex-col">
+                <label className="text-xs text-gray-500 mb-1">Rating</label>
+                <input
+                  type="number"
+                  className="w-full bg-gray-100 text-xs rounded border border-gray-300 focus:border-indigo-500 focus:bg-white px-2 py-1 outline-none"
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                  step="0.1"
+                  min="0"
+                  max="5"
+                />
+              </div>
             </div>
-          </form>
-        </Card>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
