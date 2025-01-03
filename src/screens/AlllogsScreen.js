@@ -266,7 +266,7 @@ export default function AdminLogsPage() {
           onClick={() => navigate('/')}
           className="cursor-pointer text-center sm:text-left"
         >
-          <h1 className="text-sm sm:text-md font-bold text-red-600">KK TRADING</h1>
+          <h1 className="text-sm sm:text-md font-bold text-red-600">Travancore Backers</h1>
           <p className="text-gray-500 text-xs sm:text-xs font-medium">
             All Logs and User Tracking
           </p>

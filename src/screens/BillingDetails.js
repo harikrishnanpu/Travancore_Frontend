@@ -657,7 +657,7 @@ const BillingList = () => {
           onClick={() => navigate('/')}
           className="text-center cursor-pointer"
         >
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">
             All Billings Information And Updation
           </p>

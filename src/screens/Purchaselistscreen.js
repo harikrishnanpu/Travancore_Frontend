@@ -1,4 +1,5 @@
 // src/screens/PurchaseList.jsx
+
 import React, { useState, useEffect, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -8,6 +9,8 @@ import { useSelector } from 'react-redux';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { FaUser, FaFilter } from 'react-icons/fa';
+import ErrorModal from '../components/ErrorModal'; // Ensure correct import path
+import BillingSuccess from '../components/billingsuccess'; // Ensure correct import path
 
 const PurchaseList = () => {
   const navigate = useNavigate();
@@ -32,6 +35,11 @@ const PurchaseList = () => {
   // Sidebar for mobile filters
   const [showSidebar, setShowSidebar] = useState(false);
 
+  // Modal States
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [returnInvoice, setReturnInvoice] = useState('');
+
   const userSignin = useSelector((state) => state.userSignin);
   const { userInfo } = userSignin;
 
@@ -43,6 +51,7 @@ const PurchaseList = () => {
       setPurchases(response.data);
     } catch (err) {
       setError('Failed to fetch purchases.');
+      setShowErrorModal(true);
       console.error(err);
     } finally {
       setLoading(false);
@@ -103,15 +112,15 @@ const PurchaseList = () => {
     // Sorting
     if (sortField) {
       data.sort((a, b) => {
-        let aField = a[sortField];
-        let bField = b[sortField];
+        let aField = a;
+        let bField = b;
 
-        // Handle nested fields if any
-        if (sortField.includes('.')) {
-          const fields = sortField.split('.');
-          aField = fields.reduce((acc, curr) => acc && acc[curr], a);
-          bField = fields.reduce((acc, curr) => acc && acc[curr], b);
-        }
+        // Handle nested fields if any (e.g., totals.grandTotal)
+        const fields = sortField.split('.');
+        fields.forEach((field) => {
+          aField = aField ? aField[field] : null;
+          bField = bField ? bField[field] : null;
+        });
 
         if (typeof aField === 'string') {
           aField = aField.toLowerCase();
@@ -147,13 +156,13 @@ const PurchaseList = () => {
   const stats = useMemo(() => {
     let totalAmount = 0;
     let grandTotal = 0;
-    let transportationCharges = 0;
+    let transportCost = 0;
     let totalItems = 0;
 
     filteredPurchases.forEach((purchase) => {
-      totalAmount += parseFloat(purchase.totals.totalPurchaseAmount) || 0;
-      grandTotal += parseFloat(purchase.totals.grandTotalPurchaseAmount) || 0;
-      transportationCharges += parseFloat(purchase.totals.transportationCharges) || 0;
+      totalAmount += parseFloat(purchase.totals.netItemTotal) || 0;
+      grandTotal += parseFloat(purchase.totals.grandTotal) || 0;
+      transportCost += parseFloat(purchase.totals.transportCost) || 0;
       totalItems += purchase.items.length;
     });
 
@@ -161,7 +170,7 @@ const PurchaseList = () => {
       totalPurchases: filteredPurchases.length,
       totalAmount,
       grandTotal,
-      transportationCharges,
+      transportCost,
       totalItems,
     };
   }, [filteredPurchases]);
@@ -193,9 +202,12 @@ const PurchaseList = () => {
         'Seller ID',
         'Seller GST',
         'Total Items',
-        'Total Amount',
+        'Net Item Total',
+        'Total GST Amount',
+        'Transport Cost',
+        'Other Cost',
+        'Purchase Total',
         'Grand Total',
-        'Transportation Charges',
       ];
       const tableRows = [];
 
@@ -208,9 +220,12 @@ const PurchaseList = () => {
           purchase.sellerId,
           purchase.sellerGst || 'N/A',
           purchase.items.length,
-          '₹' + (parseFloat(purchase.totals.totalPurchaseAmount) || 0).toFixed(2),
-          '₹' + (parseFloat(purchase.totals.grandTotalPurchaseAmount) || 0).toFixed(2),
-          '₹' + (parseFloat(purchase.totals.transportationCharges) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.netItemTotal) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.totalGstAmount) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.transportCost) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.otherCost) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.purchaseTotal) || 0).toFixed(2),
+          '₹' + (parseFloat(purchase.totals.grandTotal) || 0).toFixed(2),
         ];
         tableRows.push(purchaseData);
       });
@@ -226,6 +241,7 @@ const PurchaseList = () => {
     } catch (err) {
       setPdfLoading(false);
       setError('Failed to generate PDF.');
+      setShowErrorModal(true);
       console.error(err);
     }
   };
@@ -250,61 +266,23 @@ const PurchaseList = () => {
           category: item.category || '',
           quantity: item.quantity || 0,
           quantityInNumbers: item.quantityInNumbers || 0,
-          pUnit: item.pUnit || '',
-          sUnit: item.sUnit || '',
+          purchaseUnit: item.purchaseUnit || '',
+          sellingUnit: item.sellingUnit || '',
           psRatio: item.psRatio || 0,
-          length: item.length || 0,
-          breadth: item.breadth || 0,
-          size: item.size || 0,
-          billPartPrice: parseFloat(item.billPartPrice) || 0,
-          cashPartPrice: parseFloat(item.cashPartPrice) || 0,
-          billPartPriceInNumbers: parseFloat(item.billPartPriceInNumbers) || 0,
-          cashPartPriceInNumbers: parseFloat(item.cashPartPriceInNumbers) || 0,
-          allocatedOtherExpense: parseFloat(item.allocatedOtherExpense) || 0,
+          purchasePrice: item.purchasePrice || 0,
+          gstPercent: item.gstPercent || 0,
+          expiryDate: item.expiryDate || '',
         })),
         totals: {
-          billPartTotal: parseFloat(purchase.totals.billPartTotal) || 0,
-          cashPartTotal: parseFloat(purchase.totals.cashPartTotal) || 0,
-          amountWithoutGSTItems: parseFloat(purchase.totals.amountWithoutGSTItems) || 0,
-          gstAmountItems: parseFloat(purchase.totals.gstAmountItems) || 0,
-          cgstItems: parseFloat(purchase.totals.cgstItems) || 0,
-          sgstItems: parseFloat(purchase.totals.sgstItems) || 0,
-          amountWithoutGSTTransport: parseFloat(purchase.totals.amountWithoutGSTTransport) || 0,
-          gstAmountTransport: parseFloat(purchase.totals.gstAmountTransport) || 0,
-          cgstTransport: parseFloat(purchase.totals.cgstTransport) || 0,
-          sgstTransport: parseFloat(purchase.totals.sgstTransport) || 0,
-          unloadingCharge: parseFloat(purchase.totals.unloadingCharge) || 0,
-          insurance: parseFloat(purchase.totals.insurance) || 0,
-          damagePrice: parseFloat(purchase.totals.damagePrice) || 0,
-          totalPurchaseAmount: parseFloat(purchase.totals.totalPurchaseAmount) || 0,
-          totalOtherExpenses: parseFloat(purchase.totals.totalOtherExpenses) || 0,
-          grandTotalPurchaseAmount: parseFloat(purchase.totals.grandTotalPurchaseAmount) || 0,
-          transportationCharges: parseFloat(purchase.totals.transportationCharges) || 0,
+          netItemTotal: parseFloat(purchase.totals.netItemTotal) || 0,
+          totalGstAmount: parseFloat(purchase.totals.totalGstAmount) || 0,
+          transportCost: parseFloat(purchase.totals.transportCost) || 0,
+          otherCost: parseFloat(purchase.totals.otherCost) || 0,
+          purchaseTotal: parseFloat(purchase.totals.purchaseTotal) || 0,
+          grandTotal: parseFloat(purchase.totals.grandTotal) || 0,
         },
-        transportationDetails: {
-          logistic: {
-            purchaseId: purchase.transportationDetails?.logistic?.purchaseId || '',
-            invoiceNo: purchase.transportationDetails?.logistic?.invoiceNo || '',
-            billId: purchase.transportationDetails?.logistic?.billId || '',
-            companyGst: purchase.transportationDetails?.logistic?.companyGst || '',
-            transportCompanyName:
-              purchase.transportationDetails?.logistic?.transportCompanyName || '',
-            transportationCharges:
-              parseFloat(purchase.transportationDetails?.logistic?.transportationCharges) || 0,
-            remark: purchase.transportationDetails?.logistic?.remark || '',
-          },
-          local: {
-            purchaseId: purchase.transportationDetails?.local?.purchaseId || '',
-            invoiceNo: purchase.transportationDetails?.local?.invoiceNo || '',
-            billId: purchase.transportationDetails?.local?.billId || '',
-            companyGst: purchase.transportationDetails?.local?.companyGst || '',
-            transportCompanyName:
-              purchase.transportationDetails?.local?.transportCompanyName || '',
-            transportationCharges:
-              parseFloat(purchase.transportationDetails?.local?.transportationCharges) || 0,
-            remark: purchase.transportationDetails?.local?.remark || '',
-          },
-        },
+        transportDetails: purchase.transportDetails || [],
+        logicField: purchase.logicField || '',
       };
 
       const response = await api.post('/api/print/generate-purchase-invoice-html', formData);
@@ -314,6 +292,9 @@ const PurchaseList = () => {
       if (printWindow) {
         printWindow.document.write(htmlContent);
         printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
       } else {
         alert('Popup blocked! Please allow popups for this website.');
       }
@@ -322,6 +303,7 @@ const PurchaseList = () => {
     } catch (error) {
       setPdfLoading(false);
       setError('Failed to generate purchase invoice.');
+      setShowErrorModal(true);
       console.error('Error:', error);
     }
   };
@@ -334,6 +316,7 @@ const PurchaseList = () => {
         setPurchases(purchases.filter((purchase) => purchase._id !== id));
       } catch (error) {
         setError('Error occurred while deleting the purchase.');
+        setShowErrorModal(true);
         console.error(error);
       }
     }
@@ -365,12 +348,6 @@ const PurchaseList = () => {
     setShowSidebar((prev) => !prev);
   };
 
-  // Render Status Indicator or any other visual indicator if needed
-  const renderStatusIndicator = (purchase) => {
-    // Example: you can customize based on certain conditions
-    return null; // Placeholder
-  };
-
   // Render Purchase Card for Mobile
   const renderCard = (purchase) => (
     <div
@@ -395,15 +372,15 @@ const PurchaseList = () => {
       <p className="text-gray-600 text-xs mt-1">Total Items: {purchase.items.length}</p>
       <div className="flex justify-between">
         <p className="text-gray-600 text-xs font-bold mt-1">
-          Total Amount: ₹{(parseFloat(purchase.totals.totalPurchaseAmount) || 0).toFixed(2)}
+          Net Item Total: ₹{(parseFloat(purchase.totals.netItemTotal) || 0).toFixed(2)}
         </p>
         <p className="text-gray-400 italic text-xs mt-1">
-          Grand Total: ₹{(parseFloat(purchase.totals.grandTotalPurchaseAmount) || 0).toFixed(2)}
+          Grand Total: ₹{(parseFloat(purchase.totals.grandTotal) || 0).toFixed(2)}
         </p>
       </div>
       <div className="flex justify-between">
         <p className="text-gray-600 text-xs font-bold mt-1">
-          Transportation Charges: ₹{purchase.totals.transportationCharges || 0}
+          Transport Cost: ₹{(parseFloat(purchase.totals.transportCost) || 0).toFixed(2)}
         </p>
         <p className="text-gray-400 italic text-xs mt-1">
           Last Edited: {new Date(purchase.updatedAt ? purchase.updatedAt : purchase.createdAt).toLocaleDateString()}
@@ -458,48 +435,23 @@ const PurchaseList = () => {
             <th className="px-2 py-2">Seller ID</th>
             <th className="px-2 py-2">Seller GST</th>
             <th className="px-2 py-2">Total Items</th>
-            <th className="px-2 py-2">Total Amount</th>
+            <th className="px-2 py-2">Net Item Total</th>
+            <th className="px-2 py-2">Total GST Amount</th>
+            <th className="px-2 py-2">Transport Cost</th>
+            <th className="px-2 py-2">Other Cost</th>
+            <th className="px-2 py-2">Purchase Total</th>
             <th className="px-2 py-2">Grand Total</th>
-            <th className="px-2 py-2">Transportation Charges</th>
             <th className="px-2 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {skeletonRows.map((row) => (
             <tr key={row} className="hover:bg-gray-100 divide-y divide-x">
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
-              <td className="px-2 py-2">
-                <Skeleton height={10} />
-              </td>
+              {Array.from({ length: 14 }, (_, idx) => (
+                <td key={idx} className="px-2 py-2">
+                  <Skeleton height={10} />
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -533,18 +485,18 @@ const PurchaseList = () => {
         </p>
         <div className="flex justify-between">
           <p className="text-gray-600 text-xs font-bold mt-1">
-            <Skeleton height={10} width={`40%`} />
+            Net Item Total: ₹<Skeleton width={`40%`} />
           </p>
           <p className="text-gray-400 italic text-xs mt-1">
-            <Skeleton height={10} width={`30%`} />
+            Grand Total: ₹<Skeleton width={`30%`} />
           </p>
         </div>
         <div className="flex justify-between">
           <p className="text-gray-600 text-xs font-bold mt-1">
-            <Skeleton height={10} width={`50%`} />
+            Transport Cost: ₹<Skeleton width={`40%`} />
           </p>
           <p className="text-gray-400 italic text-xs mt-1">
-            <Skeleton height={10} width={`30%`} />
+            Last Edited: <Skeleton width={`30%`} />
           </p>
         </div>
         <div className="flex mt-4 text-xs space-x-2">
@@ -567,6 +519,20 @@ const PurchaseList = () => {
             <p className="text-white text-xs">Generating...</p>
           </div>
         </div>
+      )}
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <ErrorModal message={error} onClose={() => setShowErrorModal(false)} />
+      )}
+
+      {/* Success Modal */}
+      {success && (
+        <BillingSuccess
+          isAdmin={userInfo?.isAdmin}
+          estimationNo={returnInvoice}
+          onClose={() => setSuccess(false)}
+        />
       )}
 
       {/* Sidebar for mobile filters */}
@@ -642,9 +608,9 @@ const PurchaseList = () => {
         <div className="flex justify-end mt-4">
           <button
             onClick={resetFilters}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold"
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold flex items-center"
           >
-         < i className='fa fa-refresh' />
+            <i className="fa fa-refresh mr-2"></i> Reset
           </button>
         </div>
       </div>
@@ -652,7 +618,7 @@ const PurchaseList = () => {
       {/* Header */}
       <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative">
         <div onClick={() => navigate('/')} className="text-center cursor-pointer">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">
             All Purchases Information and Updation
           </p>
@@ -663,6 +629,12 @@ const PurchaseList = () => {
             className="md:hidden bg-red-500 text-white p-2 rounded flex items-center"
           >
             <FaFilter className="mr-1" />
+          </button>
+          <button
+            onClick={handleGeneratePDF}
+            className="bg-red-500 text-white px-4 py-2 rounded font-bold text-xs hover:bg-red-600 flex items-center"
+          >
+            <i className="fa fa-file-pdf-o mr-2"></i> Generate PDF
           </button>
         </div>
       </div>
@@ -686,9 +658,9 @@ const PurchaseList = () => {
             <p className="text-sm font-bold text-gray-700">Rs. {stats.grandTotal.toFixed(2)}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[150px]">
-            <p className="text-xs font-bold text-green-600">Transportation Charges</p>
-            <p className="text-xs text-gray-500">Rs. {stats.transportationCharges.toFixed(2)}</p>
-            <p className="text-sm font-bold text-gray-700">Rs. {stats.transportationCharges.toFixed(2)}</p>
+            <p className="text-xs font-bold text-green-600">Transport Cost</p>
+            <p className="text-xs text-gray-500">Rs. {stats.transportCost.toFixed(2)}</p>
+            <p className="text-sm font-bold text-gray-700">Rs. {stats.transportCost.toFixed(2)}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md flex-1 min-w-[150px]">
             <p className="text-xs font-bold text-yellow-600">Total Items</p>
@@ -761,9 +733,9 @@ const PurchaseList = () => {
           <div className="flex items-end">
             <button
               onClick={resetFilters}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold flex items-center"
             >
-             <i className='fa fa-refresh' />
+              <i className="fa fa-refresh mr-2"></i> Reset
             </button>
           </div>
         </div>
@@ -795,16 +767,74 @@ const PurchaseList = () => {
                 <table className="w-full text-xs text-gray-500 bg-white shadow-md rounded-lg overflow-hidden">
                   <thead className="bg-red-600 text-xs text-white">
                     <tr className="divide-y">
-                      <th className="px-2 py-2">Invoice No</th>
-                      <th className="px-2 py-2">Purchase ID</th>
-                      <th className="px-2 py-2">Invoice Date</th>
-                      <th className="px-2 py-2">Supplier Name</th>
-                      <th className="px-2 py-2">Seller ID</th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('invoiceNo');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Invoice No {sortField === 'invoiceNo' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('purchaseId');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Purchase ID {sortField === 'purchaseId' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('invoiceDate');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Invoice Date {sortField === 'invoiceDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('sellerName');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Supplier Name {sortField === 'sellerName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('sellerId');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Seller ID {sortField === 'sellerId' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
                       <th className="px-2 py-2">Seller GST</th>
-                      <th className="px-2 py-2">Total Items</th>
-                      <th className="px-2 py-2">Total Amount</th>
-                      <th className="px-2 py-2">Grand Total</th>
-                      <th className="px-2 py-2">Transportation Charges</th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('items.length');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Total Items {sortField === 'items.length' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('totals.netItemTotal');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Net Item Total {sortField === 'totals.netItemTotal' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('totals.totalGstAmount');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Total GST Amount {sortField === 'totals.totalGstAmount' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('totals.transportCost');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Transport Cost {sortField === 'totals.transportCost' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2">Other Cost</th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('totals.purchaseTotal');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Purchase Total {sortField === 'totals.purchaseTotal' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-2 py-2 cursor-pointer" onClick={() => {
+                        setSortField('totals.grandTotal');
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                      }}>
+                        Grand Total {sortField === 'totals.grandTotal' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </th>
                       <th className="px-2 py-2">Actions</th>
                     </tr>
                   </thead>
@@ -880,40 +910,69 @@ const PurchaseList = () => {
                           {sortField === 'items.length' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
                         </td>
 
-                        {/* Total Amount with sorting */}
+                        {/* Net Item Total with sorting */}
                         <td
                           className="px-2 py-2 text-xs cursor-pointer"
                           onClick={() => {
-                            setSortField('totals.totalPurchaseAmount');
+                            setSortField('totals.netItemTotal');
                             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                           }}
                         >
-                          ₹{(parseFloat(purchase.totals.totalPurchaseAmount) || 0).toFixed(2)}
-                          {sortField === 'totals.totalPurchaseAmount' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
+                          ₹{(parseFloat(purchase.totals.netItemTotal) || 0).toFixed(2)}
+                          {sortField === 'totals.netItemTotal' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
+                        </td>
+
+                        {/* Total GST Amount with sorting */}
+                        <td
+                          className="px-2 py-2 text-xs cursor-pointer"
+                          onClick={() => {
+                            setSortField('totals.totalGstAmount');
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          }}
+                        >
+                          ₹{(parseFloat(purchase.totals.totalGstAmount) || 0).toFixed(2)}
+                          {sortField === 'totals.totalGstAmount' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
+                        </td>
+
+                        {/* Transport Cost with sorting */}
+                        <td
+                          className="px-2 py-2 text-xs cursor-pointer"
+                          onClick={() => {
+                            setSortField('totals.transportCost');
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          }}
+                        >
+                          ₹{(parseFloat(purchase.totals.transportCost) || 0).toFixed(2)}
+                          {sortField === 'totals.transportCost' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
+                        </td>
+
+                        {/* Other Cost */}
+                        <td className="px-2 py-2 text-xs">
+                          ₹{(parseFloat(purchase.totals.otherCost) || 0).toFixed(2)}
+                        </td>
+
+                        {/* Purchase Total with sorting */}
+                        <td
+                          className="px-2 py-2 text-xs cursor-pointer"
+                          onClick={() => {
+                            setSortField('totals.purchaseTotal');
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          }}
+                        >
+                          ₹{(parseFloat(purchase.totals.purchaseTotal) || 0).toFixed(2)}
+                          {sortField === 'totals.purchaseTotal' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
                         </td>
 
                         {/* Grand Total with sorting */}
                         <td
                           className="px-2 py-2 text-xs cursor-pointer"
                           onClick={() => {
-                            setSortField('totals.grandTotalPurchaseAmount');
+                            setSortField('totals.grandTotal');
                             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                           }}
                         >
-                          ₹{(parseFloat(purchase.totals.grandTotalPurchaseAmount) || 0).toFixed(2)}
-                          {sortField === 'totals.grandTotalPurchaseAmount' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
-                        </td>
-
-                        {/* Transportation Charges with sorting */}
-                        <td
-                          className="px-2 py-2 text-xs cursor-pointer"
-                          onClick={() => {
-                            setSortField('totals.transportationCharges');
-                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                          }}
-                        >
-                          ₹{(parseFloat(purchase.totals.transportationCharges) || 0).toFixed(2)}
-                          {sortField === 'totals.transportationCharges' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
+                          ₹{(parseFloat(purchase.totals.grandTotal) || 0).toFixed(2)}
+                          {sortField === 'totals.grandTotal' && (sortOrder === 'asc' ? ' ↑' : ' ↓')}
                         </td>
 
                         {/* Actions */}
@@ -1027,7 +1086,7 @@ const PurchaseList = () => {
                   <p className="mb-1">
                     Invoice Date:{' '}
                     <span className="text-gray-700">
-                      {new Date(selectedPurchase.billingDate || selectedPurchase.invoiceDate).toLocaleString()}
+                      {new Date(selectedPurchase.billingDate || selectedPurchase.invoiceDate).toLocaleDateString()}
                     </span>
                   </p>
                   <p className="mb-1">
@@ -1041,45 +1100,39 @@ const PurchaseList = () => {
                 </div>
                 <div>
                   <p className="mb-1">
-                    Total Purchase Amount:{' '}
+                    Net Item Total:{' '}
                     <span className="text-gray-700">
-                      ₹{(parseFloat(selectedPurchase.totals.totalPurchaseAmount) || 0).toFixed(2)}
+                      ₹{(parseFloat(selectedPurchase.totals.netItemTotal) || 0).toFixed(2)}
                     </span>
                   </p>
                   <p className="mb-1">
-                    Grand Total Purchase Amount:{' '}
+                    Total GST Amount:{' '}
                     <span className="text-gray-700">
-                      ₹{(parseFloat(selectedPurchase.totals.grandTotalPurchaseAmount) || 0).toFixed(2)}
+                      ₹{(parseFloat(selectedPurchase.totals.totalGstAmount) || 0).toFixed(2)}
                     </span>
                   </p>
                   <p className="mb-1">
-                    Transportation Charges:{' '}
+                    Transport Cost:{' '}
                     <span className="text-gray-700">
-                      ₹{parseFloat(selectedPurchase.totals.transportationCharges) || 0}
+                      ₹{(parseFloat(selectedPurchase.totals.transportCost) || 0).toFixed(2)}
                     </span>
                   </p>
                   <p className="mb-1">
-                    Unloading Charge:{' '}
+                    Other Cost:{' '}
                     <span className="text-gray-700">
-                      ₹{parseFloat(selectedPurchase.totals.unloadingCharge) || 0}
+                      ₹{(parseFloat(selectedPurchase.totals.otherCost) || 0).toFixed(2)}
                     </span>
                   </p>
                   <p className="mb-1">
-                    Insurance:{' '}
+                    Purchase Total:{' '}
                     <span className="text-gray-700">
-                      ₹{parseFloat(selectedPurchase.totals.insurance) || 0}
+                      ₹{(parseFloat(selectedPurchase.totals.purchaseTotal) || 0).toFixed(2)}
                     </span>
                   </p>
                   <p className="mb-1">
-                    Damage Price:{' '}
+                    Grand Total:{' '}
                     <span className="text-gray-700">
-                      ₹{parseFloat(selectedPurchase.totals.damagePrice) || 0}
-                    </span>
-                  </p>
-                  <p className="mb-1">
-                    Total Other Expenses:{' '}
-                    <span className="text-gray-700">
-                      ₹{parseFloat(selectedPurchase.totals.totalOtherExpenses) || 0}
+                      ₹{(parseFloat(selectedPurchase.totals.grandTotal) || 0).toFixed(2)}
                     </span>
                   </p>
                 </div>
@@ -1095,10 +1148,14 @@ const PurchaseList = () => {
                       <th className="px-4 py-3">Sl</th>
                       <th className="px-4 py-3">Product</th>
                       <th className="px-2 py-3 text-center">ID</th>
+                      <th className="px-2 py-3">Purchase Unit</th>
+                      <th className="px-2 py-3">Selling Unit</th>
+                      <th className="px-2 py-3">PS Ratio</th>
                       <th className="px-2 py-3">Qty</th>
-                      <th className="px-2 py-3">Unit</th>
-                      <th className="px-2 py-3">Bill Price</th>
-                      <th className="px-2 py-3">Cash Price</th>
+                      <th className="px-2 py-3">Qty in Numbers</th>
+                      <th className="px-2 py-3">Purchase Price</th>
+                      <th className="px-2 py-3">GST (%)</th>
+                      <th className="px-2 py-3">Expiry Date</th>
                       <th className="px-2 py-3">Total</th>
                     </tr>
                   </thead>
@@ -1123,19 +1180,33 @@ const PurchaseList = () => {
                           {item.itemId || 'N/A'}
                         </td>
                         <td className="px-2 py-4 text-xs">
+                          {item.purchaseUnit || 'N/A'}
+                        </td>
+                        <td className="px-2 py-4 text-xs">
+                          {item.sellingUnit || 'N/A'}
+                        </td>
+                        <td className="px-2 py-4 text-xs">
+                          {item.psRatio || 'N/A'}
+                        </td>
+                        <td className="px-2 py-4 text-xs">
                           {item.quantity}
                         </td>
                         <td className="px-2 py-4 text-xs">
-                          {item.pUnit || 'N/A'}
+                          {item.quantityInNumbers}
                         </td>
                         <td className="px-2 py-4 text-xs">
-                          ₹{(item.billPartPrice || 0).toFixed(2)}
+                          ₹{(item.purchasePrice || 0).toFixed(2)}
                         </td>
                         <td className="px-2 py-4 text-xs">
-                          ₹{(item.cashPartPrice || 0).toFixed(2)}
+                          {item.gstPercent}%
                         </td>
                         <td className="px-2 py-4 text-xs">
-                          ₹{((item.quantity || 0) * (item.billPartPrice + item.cashPartPrice)).toFixed(2)}
+                          {item.expiryDate
+                            ? new Date(item.expiryDate).toLocaleDateString()
+                            : 'N/A'}
+                        </td>
+                        <td className="px-2 py-4 text-xs">
+                          ₹{((item.quantityInNumbers || 0) * (item.purchasePrice || 0) * (1 + (item.gstPercent || 0) / 100)).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -1146,93 +1217,39 @@ const PurchaseList = () => {
               {/* Totals */}
               <div className="text-right mt-4">
                 <p className="text-xs mb-1">
-                  Bill Part Total:{' '}
+                  Net Item Total:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.billPartTotal) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.netItemTotal) || 0).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-xs mb-1">
-                  Cash Part Total:{' '}
+                  Total GST Amount:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.cashPartTotal) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.totalGstAmount) || 0).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-xs mb-1">
-                  Amount Without GST (Items):{' '}
+                  Transport Cost:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.amountWithoutGSTItems) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.transportCost) || 0).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-xs mb-1">
-                  GST Amount (Items):{' '}
+                  Other Cost:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.gstAmountItems) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.otherCost) || 0).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-xs mb-1">
-                  CGST (Items):{' '}
+                  Purchase Total:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.cgstItems) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.purchaseTotal) || 0).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-xs mb-1">
-                  SGST (Items):{' '}
+                  Grand Total:{' '}
                   <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.sgstItems) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Amount Without GST (Transport):{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.amountWithoutGSTTransport) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  GST Amount (Transport):{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.gstAmountTransport) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  CGST (Transport):{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.cgstTransport) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  SGST (Transport):{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.sgstTransport) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Unloading Charge:{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.unloadingCharge) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Insurance:{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.insurance) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Damage Price:{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.damagePrice) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Total Other Expenses:{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.totalOtherExpenses) || 0).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs mb-1">
-                  Grand Total Purchase Amount:{' '}
-                  <span className="text-gray-600">
-                    ₹{(parseFloat(selectedPurchase.totals.grandTotalPurchaseAmount) || 0).toFixed(2)}
+                    ₹{(parseFloat(selectedPurchase.totals.grandTotal) || 0).toFixed(2)}
                   </span>
                 </p>
               </div>

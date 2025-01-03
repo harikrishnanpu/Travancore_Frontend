@@ -56,7 +56,7 @@ export default function UserEditScreen() {
 
       <div className='flex justify-between'>
       <a href='/' className='font-bold left-4 text-blue-500'><i className='fa fa-angle-left' /> Back</a>
-      <h2 className='text-2xl font-bold text-red-600 '>KK TRADING</h2>
+      <h2 className='text-2xl font-bold text-red-600 '>Travancore Backers</h2>
       </div>
     
     <div className="max-w-screen-md mx-auto mt-10 p-6 shadow-lg rounded-lg bg-white">

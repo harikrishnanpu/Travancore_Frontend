@@ -76,6 +76,7 @@ import StockRegistry from './screens/stockRegistryScreen';
 import StockUpdatePage from './screens/stockUpdateScreen';
 import LeaveApplicationForm from './screens/leaveApplicationForm';
 import AllLeavesPage from './screens/allLeaveListScreen';
+import OrderBillScreen from './screens/orderBillScreen';
 
 
 function App() {
@@ -145,6 +146,7 @@ useEffect(() => {
             <Route path="/register" element={<RegisterScreen />}></Route>
             <Route path="/shipping" element={<ShippingAddressScreen />}></Route>
             <Route path="/create-bill" element={<BillingScreen/>}></Route>
+            <Route path="/create-order" element={<OrderBillScreen />}></Route>
             <Route path="/bills" element={<BillingList/>}></Route>
             <Route path="/bills/edit/:id" element={<EditBillScreen/>}></Route>
             <Route path="/bills/edit" element={<EditBillScreen/>}></Route>

@@ -48,7 +48,7 @@ const LoadingScreen = ({ showDelayedMessage }) => (
       </p>
     )}
 
-<p className="text-sm fixed top-40 bottom-0 left-0 right-0  font-bold text-red-400 animate-pulse pb-2 text-center mt-20 pt-10">KK TRADING</p>
+<p className="text-sm fixed top-40 bottom-0 left-0 right-0  font-bold text-red-400 animate-pulse pb-2 text-center mt-20 pt-10">Travancore Backers</p>
     <p className="text-center fixed top-40 bottom-0 left-0 right-0  text-gray-400 animate-pulse pb-10 text-xs">
       {/* <i className="fa fa-spinner fa-spin" /> Loading... */}
     </p> 

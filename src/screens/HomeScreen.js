@@ -75,10 +75,16 @@ export default function HomeScreen() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <CardSection title="Billing">
-              <ActionButton href="/create-bill" title={`${userInfo.isAdmin ? 'Create Bill' : 'Add Estimate'}`} />
+              <ActionButton href="/create-bill" title={`${userInfo.isAdmin ? 'Create Bill' : 'Add Bill'}`} />
+              <ActionButton href="/create-order" title={`${userInfo.isAdmin ? 'Create Order' : 'Add Order'}`} />
               <ActionButton href="/bills" title="All Bills" />
               {!userInfo.isAdmin && <ActionButton href="/update-stock" title="Update Stock" />}
             </CardSection>
+
+            {userInfo.isAdmin && <CardSection title="Billing">
+            <ActionButton href="/stock-logs" title="Stock Registry" />
+            <ActionButton href="/bills/payment" title="Billing Transactions" />
+            </CardSection> }
 
             {userInfo.isAdmin && <CardSection title="Purchases">
               <ActionButton href="/purchase" title="Add Purchases" />
@@ -126,10 +132,10 @@ export default function HomeScreen() {
             <ActionButton href="/purchase-report" title="Purchase Report" />
             </CardSection>}
 
-            <CardSection title="Site Reports">
+            {/* <CardSection title="Site Reports">
             <ActionButton href="/all-sites" title="All Sites Report" />
             <ActionButton href="/report-site" title="Report Site" />
-            </CardSection>
+            </CardSection> */}
 
             {userInfo.isAdmin && <CardSection title="Accounts">
             <ActionButton href="/create-account" title="Create Account" />
@@ -161,15 +167,10 @@ export default function HomeScreen() {
             <ActionButton href="/all-leaves" title="All Leaves" />
             </CardSection>
 
-            {userInfo.isAdmin && <CardSection title="Billings">
-            <ActionButton href="/stock-logs" title="Stock Registry" />
-            <ActionButton href="/bills/payment" title="Billing Transactions" />
-            </CardSection> }
-
            {userInfo.isAdmin && <CardSection title="Admin Panel">
               <ActionButton href={userInfo?.isAdmin ? '/support' : '/chat'} title="Inbox" />
               <ActionButton href="/dashboard" title="Dashboard" />
-              <ActionButton href="https://kktrading-backend.vercel.app/export" title="Export All" />
+              <ActionButton href="https://kkTravancore Backers-backend.vercel.app/export" title="Export All" />
             </CardSection> }
 
             {/* <CardSection title="Edit Billings">
@@ -190,7 +191,7 @@ export default function HomeScreen() {
 function LoadingScreen({ showDelayedMessage }) {
   return (
     <div className="fixed top-0 bg-white z-10 w-full overflow-hidden p-3">
-      <p className="text-sm font-bold text-red-400 animate-pulse pb-2 text-center mt-20 pt-10">KK TRADING</p>
+      <p className="text-sm font-bold text-red-400 animate-pulse pb-2 text-center mt-20 pt-10">Travancore Backers</p>
       {showDelayedMessage && (
         <p className="text-center text-gray-400 animate-pulse pb-4 text-xs">
           <i className="fa fa-sync fa-spin mr-2 text-red-400" />

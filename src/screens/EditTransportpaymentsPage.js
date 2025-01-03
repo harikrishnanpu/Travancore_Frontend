@@ -188,7 +188,7 @@ const EditTransportPaymentPage = () => {
         onClick={() => navigate("/")}
       >
         <div className="text-center">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">
             Edit Transport Payments
           </p>

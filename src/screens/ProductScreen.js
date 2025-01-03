@@ -75,7 +75,7 @@ export default function ProductScreen(props) {
     <div className="container mx-auto p-4">
              <div className="flex max-w-lg mx-auto items-center justify-between bg-gradient-to-l from-gray-200 mb-4 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg  relative">
   <div onClick={()=> { navigate('/'); }} className="text-center cursor-pointer">
-    <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+    <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
     <p className="text-gray-400 text-xs font-bold">Product Informations</p>
   </div>
   <i className="fa fa-box text-gray-500" />
@@ -94,7 +94,7 @@ export default function ProductScreen(props) {
               </div>
             ) : (
 
-                <div className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <div className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
     <div className="relative">
         {/* Badge for In Stock */}
         <span className={`absolute z-20 top-2 right-2 text-white text-xs font-semibold px-3 py-2 rounded-full animate-pulse shadow-lg ${product.countInStock > 10 ? 'bg-green-600' : product.countInStock === 0 ?  'bg-red-600' : ' bg-yellow-600'}`}>
@@ -107,7 +107,7 @@ export default function ProductScreen(props) {
                     <div className="w-full h-full bg-gray-300 animate-pulse" />
                 )}
                 {isError ? (
-                    <span className="text-gray-500 dark:text-gray-400">No image found</span>
+                    <span className="text-gray-500">No image found</span>
                 ) : (
                     <img
                         className={`rounded-t-lg object-cover w-full h-full transition-transform duration-300 ease-in-out transform ${isImageLoaded ? 'scale-100' : 'scale-105'}`}
@@ -125,47 +125,47 @@ export default function ProductScreen(props) {
     </div>
 
     <div className="p-6 space-y-2">
-        <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">
-            Product ID: <span className="text-gray-700 dark:text-white">{product.item_id}</span>
+        <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+            Product ID: <span className="text-gray-700">{product.item_id}</span>
         </p>
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-white tracking-tight">
+        <h2 className="text-sm font-semibold text-gray-800  tracking-tight">
             {product.name}
         </h2>
         <div className="flex justify-between text-xs">
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                Brand: <span className="font-semibold text-gray-800 dark:text-white">{product.brand}</span>
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                Brand: <span className="font-semibold text-gray-800 ">{product.brand}</span>
             </p>
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                Category: <span className="font-semibold text-gray-800 dark:text-white">{product.category}</span>
-            </p>
-        </div>
-
-        <div className="flex justify-between text-xs">
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                P Unit: <span className="font-semibold text-gray-800 dark:text-white">{product.pUnit}</span>
-            </p>
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                S Unit: <span className="font-semibold text-gray-800 dark:text-white">{product.sUnit}</span>
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                Category: <span className="font-semibold text-gray-800 ">{product.category}</span>
             </p>
         </div>
 
         <div className="flex justify-between text-xs">
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                P S Ratio: <span className="font-semibold text-gray-800 dark:text-white">{product.psRatio}</span>
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                P Unit: <span className="font-semibold text-gray-800 ">{product.pUnit}</span>
             </p>
-            <p className="text-gray-600 text-xs truncate dark:text-gray-300 font-medium">
-                Size: <span className="font-semibold text-gray-800 dark:text-white">{product.size}</span>
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                S Unit: <span className="font-semibold text-gray-800 ">{product.sUnit}</span>
+            </p>
+        </div>
+
+        <div className="flex justify-between text-xs">
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                P S Ratio: <span className="font-semibold text-gray-800 ">{product.psRatio}</span>
+            </p>
+            <p className="text-gray-600 text-xs truncate  font-medium">
+                Size: <span className="font-semibold text-gray-800 ">{product.size}</span>
             </p>
         </div>
 
         <div className="flex justify-between items-center border-t pt-2">
             <div className="text-xs">
                 <p className="text-gray-400 uppercase font-bold mb-2">Stock Details</p>
-                <p className={`font-bold dark:text-white ${product.countInStock > 10 ? 'text-green-600' : product.countInStock === 0 ? 'text-red-600' : 'text-yellow-700'}`}>
+                <p className={`font-bold  ${product.countInStock > 10 ? 'text-green-600' : product.countInStock === 0 ? 'text-red-600' : 'text-yellow-700'}`}>
                     In Stock: {product.countInStock}
                 </p>
             </div>
-            <p className="text-xs mt-5 font-semibold text-gray-500 dark:text-gray-400">
+            <p className="text-xs mt-5 font-semibold text-gray-500">
                 Stock Cleared: {soldOut ? soldOut : 0}
             </p>
         </div>
@@ -178,7 +178,7 @@ export default function ProductScreen(props) {
             alert('You need to be admin to edit this product.')
           }
         }}
-            className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800 dark:focus:ring-red-900 transition-all"
+            className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300  transition-all"
         >
             Edit Product
             <i className="fa fa-arrow-right ml-2" />
@@ -192,7 +192,7 @@ export default function ProductScreen(props) {
               alert('You need to be admin to delete this product.')
             }
         }}
-            className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800 dark:focus:ring-red-900 transition-all">
+            className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg shadow hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300   transition-all">
             <i className="fa fa-trash" />
         </p>
 

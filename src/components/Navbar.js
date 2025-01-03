@@ -65,7 +65,7 @@ function Navbar() {
   return (
     <header className="header mb-8" id="header">
       <nav className="navbar mt-2">
-        <a href="/" className="brand">KK TRADING</a>
+        <a href="/" className="brand">Travancore Backers</a>
 
         {/* Account Icon with Dropdown for Small Screens */}
         <div

@@ -260,7 +260,7 @@ export default function SearchScreen() {
         className="flex max-w-4xl mx-auto items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 relative cursor-pointer"
       >
         <div className="text-center">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">
             Products and Management
           </p>

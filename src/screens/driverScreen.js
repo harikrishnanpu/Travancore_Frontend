@@ -265,7 +265,7 @@ const DriverPage = () => {
     <div className="mx-auto">
       <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-4 rounded-lg mb-4">
         <div onClick={() => navigate('/')} className="text-center cursor-pointer">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">Bill Informations For Drivers</p>
         </div>
         <i className="fa fa-list text-gray-500" />

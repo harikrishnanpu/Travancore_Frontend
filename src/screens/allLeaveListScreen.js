@@ -122,7 +122,7 @@ const AllLeavesPage = () => {
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div onClick={() => window.location.href='/'} className="text-center cursor-pointer mb-4">
-        <h2 className="text-base font-bold text-red-600">KK TRADING</h2>
+        <h2 className="text-base font-bold text-red-600">Travancore Backers</h2>
         <p className="text-red-400 text-xs font-bold">All Leave Applications</p>
       </div>
 

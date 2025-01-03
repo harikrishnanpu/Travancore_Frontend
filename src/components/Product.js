@@ -27,7 +27,7 @@ export default function Product({ product }) {
         </a>
 
         <div className="text-xs text-gray-500 mt-1 truncate">{product.brand}</div>
-        <div className="text-xs text-gray-500 mt-1 truncate">{product.category}</div>
+        <div className="text-xs text-gray-500 mt-1 truncate">In Stock: {product.countInStock}</div>
 
         {/* <div className="text-md font-semibold text-indigo-600 mt-1">${product.price}</div> */}
       </div>

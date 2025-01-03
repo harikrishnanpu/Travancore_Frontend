@@ -216,7 +216,7 @@ const PurchaseReport = () => {
       {/* Header */}
       <div className="flex items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-3 rounded-lg mb-2 relative">
         <div onClick={() => navigate('/')} className="text-center cursor-pointer">
-          <h2 className="text-base font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-base font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">Purchase Report</p>
         </div>
         <i className="fa fa-file-text text-gray-500 text-lg" />

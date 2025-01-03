@@ -105,9 +105,6 @@ export default function OutOfStockModal({
             In Stock: {product.countInStock} NOS
           </p>
                         </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Current Updating In Sqft: {sqqty}
-          </p>
         </div>
 
         <div className="mb-4">

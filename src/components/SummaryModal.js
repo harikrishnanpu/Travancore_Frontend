@@ -146,7 +146,7 @@ export default function SummaryModal({
             <label className="block text-xs">Received Date</label>
             <input
             ref={receivedDateRef}
-            onKeyDown={(e)=> changeRef(e, unloadingRef)}
+            onKeyDown={(e)=> changeRef(e, transportationRef)}
               type="date"
               value={receivedDate}
               onChange={(e) => setReceivedDate(e.target.value)}
@@ -155,7 +155,7 @@ export default function SummaryModal({
 
             </div>
 
-            <div>
+            {/* <div>
 
 <label className="block text-xs">Unloading Charge</label>
 <input
@@ -169,11 +169,11 @@ export default function SummaryModal({
   }
   className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
 />
-</div>
+</div> */}
 
 <div>
 
-<label className="block text-xs">Transportation Charge</label>
+<label className="block text-xs">Delivery Charge</label>
 <input
   type="number"
   onKeyDown={(e)=> changeRef(e, handlingRef)}

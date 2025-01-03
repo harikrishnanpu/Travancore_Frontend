@@ -1,16 +1,21 @@
-// src/screens/EditPurchaseScreen.jsx
 import React, { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "./api";
 import ErrorModal from "../components/ErrorModal";
+import BillingSuccess from "../components/billingsuccess";
+// If you have a Redux action for updating the purchase, import it here:
+// import { updatePurchase } from "../actions/productActions";
 
 export default function EditPurchaseScreen() {
-  const { id } = useParams(); // Purchase ID from URL
+  const { id } = useParams(); // The MongoDB _id or purchaseId from your route
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  // State Variables
+  // Steps
+  const [currentStep, setCurrentStep] = useState(1);
 
-  // Seller Information
+  // Seller (Supplier) Information
   const [sellerId, setSellerId] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [sellerAddress, setSellerAddress] = useState("");
@@ -19,89 +24,89 @@ export default function EditPurchaseScreen() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
 
   // Purchase Information
+  const [lastBillId, setLastBillId] = useState("");
   const [purchaseId, setPurchaseId] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
   const [billingDate, setBillingDate] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
-  const [lastItemId, setLastItemId] = useState("");
-  const [itemstock,setItemStock] = useState('0');
 
-  // Item Information
+  // Items
   const [items, setItems] = useState([]);
   const [itemLoading, setItemLoading] = useState(false);
+  const [lastItemId, setLastItemId] = useState("");
+
+  // Fields for a new/existing item
   const [itemId, setItemId] = useState("");
+  const [mrp, setMrp] = useState("");
   const [itemName, setItemName] = useState("");
-  const [itemQuantity, setItemQuantity] = useState("");
-  const [itemUnit, setItemUnit] = useState("");
   const [itemBrand, setItemBrand] = useState("");
   const [itemCategory, setItemCategory] = useState("");
-  const [itemBillPrice, setItemBillPrice] = useState("");
-  const [itemCashPrice, setItemCashPrice] = useState("");
-  const [categories, setCategories] = useState([]);
-
-  // Item Additional Information
-  const [sUnit, setSUnit] = useState("NOS");
+  const [itemPurchaseUnit, setItemPurchaseUnit] = useState("");
+  const [itemSellingUnit, setItemSellingUnit] = useState("");
   const [psRatio, setPsRatio] = useState("");
-  const [length, setLength] = useState("");
-  const [breadth, setBreadth] = useState("");
-  const [size, setSize] = useState("");
+  const [itemQuantity, setItemQuantity] = useState("");
+  const [itemPurchasePrice, setItemPurchasePrice] = useState("");
+  const [itemGstPercent, setItemGstPercent] = useState("");
+  const [itemExpiry, setItemExpiry] = useState("");
 
-  // Transportation Information
-  const [logisticCompany, setLogisticCompany] = useState("");
-  const [logisticBillId, setLogisticBillId] = useState("");
-  const [logisticCompanyGst, setLogisticCompanyGst] = useState("");
-  const [logisticAmount, setLogisticAmount] = useState("");
-  const [logisticRemark, setLogisticRemark] = useState("");
-  const [localCompany, setLocalCompany] = useState("");
-  const [localBillId, setLocalBillId] = useState("");
-  const [localCompanyGst, setLocalCompanyGst] = useState("");
-  const [localAmount, setLocalAmount] = useState("");
-  const [localRemark, setLocalRemark] = useState("");
-  const [unloadingCharge, setUnloadCharge] = useState("");
-  const [insurance, setInsurance] = useState("");
-  const [damagePrice, setDamagePrice] = useState("");
+  // Categories and Transport
+  const [categories, setCategories] = useState([]);
   const [transportCompanies, setTransportCompanies] = useState([]);
-  const [isCustomCompany, setIsCustomCompany] = useState(false);
-  const [actLength, setActLength] = useState('');
-  const [actBreadth, setActBreadth] = useState('');
 
-  // Other States
-  const [currentStep, setCurrentStep] = useState(1);
+  // Transport & Other Expense
+  const [transportCompany, setTransportCompany] = useState("");
+  const [transportGst, setTransportGst] = useState("");
+  const [transportAmount, setTransportAmount] = useState("");
+  const [transportBillId, setTransportBillId] = useState("");
+  const [transportRemark, setTransportRemark] = useState("");
+  const [otherExpense, setOtherExpense] = useState("");
+  const [logicField, setLogicField] = useState("");
+
+  // Success / Error
+  const [success, setSuccess] = useState(false);
+  const [returnInvoice, setReturnInvoice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
 
-  // Refs for input fields to enable Enter navigation
-  const sellerIdRef = useRef();
+  // If using Redux for user login
+  const userSignin = useSelector((state) => state.userSignin);
+  const { userInfo } = userSignin || {};
+
+  // Refs for focus
+  const purchaseIdRef = useRef();
   const sellerNameRef = useRef();
+  const sellerIdRef = useRef();
+  const invoiceNoRef = useRef();
   const sellerAddressRef = useRef();
   const sellerGstRef = useRef();
-  const purchaseIdRef = useRef();
-  const invoiceNoRef = useRef();
   const billingDateRef = useRef();
   const invoiceDateRef = useRef();
+
   const itemIdRef = useRef();
   const itemNameRef = useRef();
   const itemBrandRef = useRef();
   const itemCategoryRef = useRef();
-  const itemBillPriceRef = useRef();
-  const itemCashPriceRef = useRef();
-  const itemUnitRef = useRef();
+  const itemPurchaseUnitRef = useRef();
+  const itemSellingUnitRef = useRef();
+  const psRatioRef = useRef();
   const itemQuantityRef = useRef();
-  const logisticCompanyRef = useRef();
-  const logisticAmountRef = useRef();
-  const localCompanyRef = useRef();
-  const localAmountRef = useRef();
-  const itemSunitRef = useRef();
-  const itemlengthRef = useRef();
-  const itemBreadthRef = useRef();
-  const itemSizeRef = useRef();
-  const itemPsRatioRef = useRef();
-  const actLengthRef = useRef();
-  const actBreadthRef = useRef();
+  const itemPurchasePriceRef = useRef();
+  const itemGstPercentRef = useRef();
+  const itemExpiryRef = useRef();
+  const mrpRef = useRef();
 
-  // Effect to auto-hide messages after 3 seconds
+  const transportCompanyRef = useRef();
+  const transportAmountRef = useRef();
+  const transportRemarkRef = useRef();
+  const otherExpenseRef = useRef();
+
+  //----------------------------------------------------------------------
+  // EFFECTS
+  //----------------------------------------------------------------------
+
+  // Auto-hide messages after 3s
   useEffect(() => {
     if (message || error) {
       const timer = setTimeout(() => {
@@ -112,7 +117,7 @@ export default function EditPurchaseScreen() {
     }
   }, [message, error]);
 
-  // Effect to focus on the first input of each step
+  // Set focus for each step
   useEffect(() => {
     if (currentStep === 1) {
       purchaseIdRef.current?.focus();
@@ -121,164 +126,151 @@ export default function EditPurchaseScreen() {
     } else if (currentStep === 3) {
       itemIdRef.current?.focus();
     } else if (currentStep === 4) {
-      logisticCompanyRef.current?.focus();
+      otherExpenseRef.current?.focus();
     }
   }, [currentStep]);
 
-  // Fetch categories, transport companies, and purchase details on component mount
+  // Fetch categories and transport companies
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchCommonData = async () => {
       try {
-        const { data } = await api.get("/api/billing/purchases/categories");
-        setCategories(data.categories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-    const fetchTransportCompanies = async () => {
-      try {
-        const { data } = await api.get("/api/purchases/get-all/transportCompany");
-        setTransportCompanies(data);
-      } catch (error) {
-        console.error("Error fetching transport companies:", error);
-      }
-    };
-    const fetchPurchaseDetails = async () => {
-      if (!id) {
-        setError("No purchase ID provided.");
+        const catData = await api.get("/api/billing/purchases/categories");
+        setCategories(catData.data.categories || []);
+
+        const transportData = await api.get(
+          "/api/purchases/get-all/transportCompany"
+        );
+        setTransportCompanies(
+          transportData.data.transportCompanies || transportData.data || []
+        );
+      } catch (err) {
+        console.error("Error fetching categories/transporters:", err);
+        setError("Failed to fetch categories/transporters.");
         setShowErrorModal(true);
-        return;
       }
+    };
+    fetchCommonData();
+  }, []);
+
+  // Fetch existing purchase data & last item ID
+  useEffect(() => {
+    if (!id) {
+      setError("No Purchase ID provided for editing.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    const fetchExistingPurchase = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
+        // 1) Fetch existing purchase (by _id or purchaseId)
+        //    Adjust the route if your route is different
         const { data } = await api.get(`/api/orders/purchase/${id}`);
-        const response = await api.get('/api/products/lastadded/id');
-        // Populate state with fetched data
-        setSellerId(data.sellerId);
-        setSellerName(data.sellerName);
-        setSellerAddress(data.sellerAddress);
-        setSellerGst(data.sellerGst);
-        setInvoiceNo(data.invoiceNo);
-        setPurchaseId(data.purchaseId);
+
+        // 2) Fetch last item ID
+        const response = await api.get("/api/products/lastadded/id");
+        if (response.data) {
+          setLastItemId(response.data);
+        }
+
+        // Populate fields
+        setSellerId(data.sellerId || "");
+        setSellerName(data.sellerName || "");
+        setSellerAddress(data.sellerAddress || "");
+        setSellerGst(data.sellerGst || "");
+        setInvoiceNo(data.invoiceNo || "");
+        setPurchaseId(data.purchaseId || "");
+
         setBillingDate(data.billingDate ? data.billingDate.substring(0, 10) : "");
         setInvoiceDate(data.invoiceDate ? data.invoiceDate.substring(0, 10) : "");
-        setLastItemId(response?.data)
 
-        // Map items to include calculated fields
-        const mappedItems = data.items.map((item) => {
-          const parsedQuantity = parseFloat(item.quantity);
-          const parsedBillPrice = parseFloat(item.billPartPrice);
-          const parsedCashPrice = parseFloat(item.cashPartPrice);
-          const psRatio = parseFloat(item.psRatio);
-          let quantityInNumbers = parsedQuantity;
-          let billPriceInNumbers = parsedBillPrice;
-          let cashPriceInNumbers = parsedCashPrice;
+        // Track "Last Billed" if needed
+        setLastBillId("TC0"); // or something from your server
 
-          if (item.pUnit === "BOX") {
-            quantityInNumbers = parsedQuantity * psRatio;
-            billPriceInNumbers = parsedBillPrice / psRatio;
-            cashPriceInNumbers = parsedCashPrice / psRatio;
-          }
+        // Adapt items
+        if (Array.isArray(data.items)) {
+          const adaptedItems = data.items.map((it) => ({
+            itemId: it.itemId,
+            name: it.name,
+            brand: it.brand,
+            category: it.category,
+            purchaseUnit: it.purchaseUnit,
+            sellingUnit: it.sellingUnit,
+            psRatio: it.psRatio || 1,
+            quantity: it.quantity,
+            quantityInNumbers: it.quantityInNumbers || 0,
+            purchasePrice: it.purchasePrice,
+            gstPercent: it.gstPercent,
+            expiryDate: it.expiryDate ? it.expiryDate.substring(0, 10) : "",
+            mrp: it.mrp || "",
+          }));
+          setItems(adaptedItems);
+        }
 
-          return {
-            ...item,
-            quantity: parsedQuantity,
-            billPrice: parsedBillPrice,
-            cashPrice: parsedCashPrice,
-            quantityInNumbers,
-            billPriceInNumbers,
-            cashPriceInNumbers,
-          };
-        });
-
-        setItems(mappedItems);
-
+        // If we have transport details
         if (data.purchaseId) {
           try {
-            const response = await api.get(`/api/orders/transport/${data.purchaseId}`);
-            const transportData = response.data;
+            const transRes = await api.get(`/api/orders/transport/${data.purchaseId}`);
+            const transportArr = transRes.data;
+            console.log(transportArr)
 
-            // Initialize variables for logistic and local transport
-            let logisticCompany = "";
-            let logisticAmount = 0;
-            let logisticRemark = "";
-            let logisticCompanyGst = "";
-            let logisticBillId = "";
-            let localCompany = "";
-            let localAmount = 0;
-            let localRemark = "";
-            let localCompanyGst = "";
-            let localBillId = "";
-            let unloadingCharge = "";
-            let insurance = "";
-            let damagePrice = "";
+            // We'll only handle "general" in this example
+            let gCompany = "";
+            let gGst = "";
+            let gAmount = "";
+            let gBillId = "";
+            let gRemark = "";
 
-            // Process the transport data
-            transportData.forEach((item) => {
-              if (item.transportType === "logistic") {
-                logisticCompany = item.transportCompanyName || "";
-                logisticAmount = item.transportationCharges || 0;
-                logisticRemark = item.remarks || "";
-                logisticCompanyGst = item.companyGst || "";
-                logisticBillId = item.billId || "";
-              } else if (item.transportType === "local") {
-                localCompany = item.transportCompanyName || "";
-                localAmount = item.transportationCharges || 0;
-                localRemark = item.remarks || "";
-                localCompanyGst = item.companyGst || "";
-                localBillId = item.billId || "";
-              } else if (item.transportType === "other") {
-                unloadingCharge = item.unloadingCharge || "";
-                insurance = item.insurance || "";
-                damagePrice = item.damagePrice || "";
+            transportArr.forEach((t) => {
+              if (t.transportType === "general") {
+                gCompany = t.transportCompanyName || "";
+                gGst = t.companyGst || "";
+                gAmount = t.transportationCharges?.toString() || "";
+                gBillId = t.billId || "";
+                gRemark = t.remarks || "";
               }
             });
 
-            setLogisticCompany(logisticCompany);
-            setLogisticAmount(logisticAmount);
-            setLogisticRemark(logisticRemark);
-            setLogisticCompanyGst(logisticCompanyGst);
-            setLogisticBillId(logisticBillId);
-
-            setLocalCompany(localCompany);
-            setLocalAmount(localAmount);
-            setLocalRemark(localRemark);
-            setLocalCompanyGst(localCompanyGst);
-            setLocalBillId(localBillId);
-
-
-            console.log("--------------------------------");
-            console.log(data.totals);
-
-            setUnloadCharge(data.totals.unloadingCharge);
-            setInsurance(data.totals.insurance);
-            setDamagePrice(data.totals.damagePrice);
-          } catch (err) {
-            console.error("Error fetching transport details:", err);
+            setTransportCompany(gCompany);
+            setTransportGst(gGst);
+            setTransportAmount(gAmount);
+            setTransportBillId(gBillId);
+            setTransportRemark(gRemark);
+          } catch (transErr) {
+            console.log("Error fetching transport details:", transErr);
           }
         }
+
+        // If we stored otherExpense & logicField
+        if (data.totals) {
+          setOtherExpense(data.totals.otherCost || "");
+        }
+        if (data.logicField) {
+          setLogicField(data.logicField);
+        }
       } catch (err) {
-        setError("Error fetching purchase details.");
+        console.error("Error fetching existing purchase:", err);
+        setError("Failed to load purchase data.");
         setShowErrorModal(true);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCategories();
-    fetchTransportCompanies();
-    fetchPurchaseDetails();
+    fetchExistingPurchase();
   }, [id]);
 
-  // Handle Seller Name change with suggestions
+  //----------------------------------------------------------------------
+  // HANDLERS
+  //----------------------------------------------------------------------
+
+  // Seller name suggestions
   const handleSellerNameChange = async (e) => {
     const value = e.target.value;
     setSellerName(value);
     if (value.trim() === "") {
       setSellerSuggestions([]);
       setSellerId("");
-      setSellerAddress("");
-      setSellerGst("");
       return;
     }
     try {
@@ -292,154 +284,29 @@ export default function EditPurchaseScreen() {
     }
   };
 
-  // Function to handle selecting a seller from suggestions
   const handleSelectSeller = (seller) => {
     setSellerName(seller.sellerName);
     setSellerId(seller.sellerId);
     setSellerAddress(seller.sellerAddress || "");
     setSellerGst(seller.sellerGst || "");
     setSellerSuggestions([]);
+    setSelectedSuggestionIndex(-1);
     invoiceNoRef.current?.focus();
   };
 
-  // Function to generate a new seller ID
   const generateSellerId = async () => {
     try {
-      const lastId = 'KKSELLER' + Date.now().toString();
-      setSellerId(lastId);
+      const newId = "TCSELLER" + Date.now().toString();
+      setSellerId(newId);
     } catch (err) {
-      setError("Error generating seller ID");
+      setError("Error generating seller ID.");
       setShowErrorModal(true);
     }
   };
 
-  // Function to handle adding items with consistent calculations
-  const addItem = () => {
-    // Validate all required fields
-    if (
-      !itemId ||
-      !itemName ||
-      !itemBrand ||
-      !itemCategory ||
-      itemBillPrice === "" ||
-      itemCashPrice === "" ||
-      !itemUnit ||
-      itemQuantity === "" ||
-      sUnit === "" ||
-      psRatio === "" ||
-      length === "" ||
-      breadth === "" ||
-      actLength === "" ||
-      actBreadth === "" ||
-      size === ""
-    ) {
-      setError("Please fill in all required fields before adding an item.");
-      setShowErrorModal(true);
-      return;
-    }
-
-    // Parse numerical inputs
-    const parsedQuantity = parseFloat(itemQuantity);
-    const parsedBillPrice = parseFloat(itemBillPrice);
-    const parsedCashPrice = parseFloat(itemCashPrice);
-    const productLength = parseFloat(length);
-    const productBreadth = parseFloat(breadth);
-    const productactLength = parseFloat(actLength);
-    const productActBreadth = parseFloat(actBreadth);
-    const productSize = parseFloat(size);
-    const productPsRatio = parseFloat(psRatio);
-
-    // Validate numerical inputs
-    if (
-      isNaN(parsedQuantity) ||
-      parsedQuantity <= 0 ||
-      isNaN(parsedBillPrice) ||
-      parsedBillPrice < 0 ||
-      isNaN(parsedCashPrice) ||
-      parsedCashPrice < 0 ||
-      isNaN(productLength) ||
-      productLength <= 0 ||
-      isNaN(productBreadth) ||
-      productBreadth <= 0 ||
-      isNaN(productSize) ||
-      productSize <= 0 ||
-      isNaN(productPsRatio) ||
-      productPsRatio <= 0
-    ) {
-      setError(
-        "Please enter valid numerical values for quantity, price, and dimensions."
-      );
-      setShowErrorModal(true);
-      return;
-    }
-
-    // Prevent duplicate items
-    if (items.some((item) => item.itemId === itemId)) {
-      setError("This item is already added. Please adjust the quantity instead.");
-      setShowErrorModal(true);
-      return;
-    }
-
-    // Calculate quantities and prices in numbers
-    let quantityInNumbers = parsedQuantity;
-    let billPriceInNumbers = parsedBillPrice;
-    let cashPriceInNumbers = parsedCashPrice;
-
-    if (itemUnit === "BOX") {
-      quantityInNumbers = parsedQuantity * productPsRatio;
-      billPriceInNumbers = parsedBillPrice / productPsRatio;
-      cashPriceInNumbers = parsedCashPrice / productPsRatio;
-    }
-
-    const newItem = {
-      itemId,
-      name: itemName,
-      brand: itemBrand,
-      category: itemCategory,
-      quantity: parsedQuantity,
-      pUnit: itemUnit,
-      billPrice: parsedBillPrice,
-      cashPrice: parsedCashPrice,
-      sUnit,
-      psRatio: productPsRatio,
-      length: productLength,
-      breadth: productBreadth,
-      actLength: productactLength,
-      actBreadth: productActBreadth,
-      size: productSize,
-      quantityInNumbers,
-      billPriceInNumbers,
-      cashPriceInNumbers,
-    };
-
-    setItems([newItem, ...items]);
-    clearItemFields();
-    setMessage("Item added successfully!");
-  };
-
-  // Function to clear item input fields after adding
-  const clearItemFields = () => {
-    setItemId("");
-    setItemName("");
-    setItemBrand("");
-    setItemCategory("");
-    setItemBillPrice("");
-    setItemCashPrice("");
-    setItemUnit("");
-    setItemQuantity("");
-    setSUnit("NOS");
-    setPsRatio("");
-    setLength("");
-    setBreadth("");
-    setSize("");
-    setActLength("");
-    setActBreadth("");
-    setItemStock("0");
-  };
-
-  // Function to handle searching for an item by ID
+  // Searching for existing item by ID
   const handleSearchItem = async () => {
-    if (itemId.trim() === "") {
+    if (!itemId.trim()) {
       setError("Please enter an Item ID to search.");
       setShowErrorModal(true);
       return;
@@ -452,17 +319,14 @@ export default function EditPurchaseScreen() {
         setItemName(data.name);
         setItemBrand(data.brand);
         setItemCategory(data.category);
-        setItemBillPrice(data.billPrice);
-        setItemCashPrice(data.cashPrice);
-        setBreadth(data.breadth);
-        setLength(data.length);
-        setPsRatio(data.psRatio);
-        setSize(data.size);
-        setSUnit(data.sUnit);
-        setItemUnit(data.pUnit);
-        setItemStock(data.countInStock);
-        setActLength(data.actLength);
-        setActBreadth(data.actBreadth);
+        setItemPurchaseUnit(data.purchaseUnit || "");
+        setItemSellingUnit(data.sellingUnit || "");
+        setPsRatio(data.psRatio || "");
+        setItemPurchasePrice(data.purchasePrice || "");
+        setItemGstPercent(data.gstPercent || "");
+        setMrp(data.mrp || "");
+        setItemQuantity("");
+        setItemExpiry(data.expiryDate ? data.expiryDate.substring(0, 10) : "");
         itemNameRef.current?.focus();
       } else {
         setError("Item not found.");
@@ -470,7 +334,7 @@ export default function EditPurchaseScreen() {
         clearItemFields();
       }
     } catch (err) {
-      setError("Error fetching item details.");
+      setError("Error searching for item.");
       setShowErrorModal(true);
       clearItemFields();
     } finally {
@@ -478,159 +342,220 @@ export default function EditPurchaseScreen() {
     }
   };
 
-  // Function to add a new category
+  // Clear item fields
+  const clearItemFields = () => {
+    setItemId("");
+    setItemName("");
+    setItemBrand("");
+    setItemCategory("");
+    setItemPurchaseUnit("");
+    setItemSellingUnit("");
+    setPsRatio("");
+    setItemQuantity("");
+    setItemPurchasePrice("");
+    setItemGstPercent("");
+    setItemExpiry("");
+    setMrp("");
+  };
+
+  // Add category
   const addCategory = () => {
-    const newCategory = prompt("Enter new category:");
-    if (newCategory && !categories.includes(newCategory)) {
-      setCategories([...categories, newCategory]);
-      setMessage(`Category "${newCategory}" added successfully!`);
+    const newCat = prompt("Enter new category:");
+    if (newCat && !categories.includes(newCat)) {
+      setCategories([...categories, newCat]);
+      setMessage(`Category "${newCat}" added successfully!`);
+      setItemCategory(newCat);
     }
   };
 
-  // Function to remove an item from the list
-  const removeItem = (index) => {
-    if (window.confirm("Are you sure you want to remove this item?")) {
-      const newItems = items.filter((_, i) => i !== index);
-      setItems(newItems);
-      setMessage("Item removed successfully!");
-    }
-  };
-
-  // Function to handle editing item fields
-  const handleItemFieldChange = (index, field, value) => {
-    const updatedItems = [...items];
-    updatedItems[index][field] = value;
-
-    // Recalculate quantities and prices in numbers if necessary
-    if (["quantity", "billPrice", "cashPrice"].includes(field)) {
-      const parsedQuantity = parseFloat(updatedItems[index].quantity);
-      const parsedBillPrice = parseFloat(updatedItems[index].billPrice);
-      const parsedCashPrice = parseFloat(updatedItems[index].cashPrice);
-      const psRatio = parseFloat(updatedItems[index].psRatio);
-
-      let quantityInNumbers = parsedQuantity;
-      let billPriceInNumbers = parsedBillPrice;
-      let cashPriceInNumbers = parsedCashPrice;
-
-      if (updatedItems[index].pUnit === "BOX") {
-        quantityInNumbers = parsedQuantity * psRatio;
-        billPriceInNumbers = parsedBillPrice / psRatio;
-        cashPriceInNumbers = parsedCashPrice / psRatio;
-      }
-
-      updatedItems[index].quantityInNumbers = quantityInNumbers;
-      updatedItems[index].billPriceInNumbers = billPriceInNumbers;
-      updatedItems[index].cashPriceInNumbers = cashPriceInNumbers;
-    }
-
-    setItems(updatedItems);
-  };
-
-  // Calculate Total Amounts
-  const calculateTotals = () => {
-    let billPartTotal = 0;
-    let cashPartTotal = 0;
-
-
-    items.forEach((item) => {
-      billPartTotal += item.quantityInNumbers * parseFloat(item.billPriceInNumbers).toFixed(2);
-      cashPartTotal += item.quantityInNumbers * parseFloat(item.cashPriceInNumbers).toFixed(2);
-    });
-
-    // GST rate for items is 18%
-    const gstRateItems = 1.18;
-
-    const amountWithoutGSTItems = billPartTotal / (gstRateItems);
-    const gstAmountItems = billPartTotal - amountWithoutGSTItems;
-    const cgstItems = gstAmountItems / 2;
-    const sgstItems = gstAmountItems / 2;
-
-    // Transportation charges
-    const logisticAmountValue = parseFloat(logisticAmount || 0);
-    const localAmountValue = parseFloat(localAmount || 0);
-    const totalTransportationCharges = logisticAmountValue + localAmountValue;
-
-    // GST rate for transportation is 5%
-    const gstRateTransport = 1.18;
-
-    const amountWithoutGSTTransport =
-      totalTransportationCharges / (gstRateTransport);
-    const gstAmountTransport =
-      totalTransportationCharges - amountWithoutGSTTransport;
-    const cgstTransport = gstAmountTransport / 2;
-    const sgstTransport = gstAmountTransport / 2;
-
-    // Parse other expenses
-    const unloadingChargeValue = parseFloat(unloadingCharge || 0);
-    const insuranceValue = parseFloat(insurance || 0);
-    const damagePriceValue = parseFloat(damagePrice || 0);
-
-    const totalOtherExpenses =
-      totalTransportationCharges +
-      unloadingChargeValue +
-      insuranceValue +
-      damagePriceValue;
-
-    const totalItems = items.reduce(
-      (acc, item) => acc + parseFloat(item.quantityInNumbers),
-      0
-    );
-
-    const perItemOtherExpense = totalOtherExpenses / totalItems;
-
-    const totalPurchaseAmount = billPartTotal + cashPartTotal;
-
-    const grandTotalPurchaseAmount = totalPurchaseAmount + totalOtherExpenses;
-
-    return {
-      billPartTotal,
-      cashPartTotal,
-      amountWithoutGSTItems,
-      gstAmountItems,
-      cgstItems,
-      sgstItems,
-      totalTransportationCharges,
-      amountWithoutGSTTransport,
-      gstAmountTransport,
-      cgstTransport,
-      sgstTransport,
-      totalOtherExpenses,
-      perItemOtherExpense,
-      totalPurchaseAmount,
-      grandTotalPurchaseAmount,
-    };
-  };
-
-  const {
-    billPartTotal,
-    cashPartTotal,
-    amountWithoutGSTItems,
-    gstAmountItems,
-    cgstItems,
-    sgstItems,
-    totalTransportationCharges,
-    amountWithoutGSTTransport,
-    gstAmountTransport,
-    cgstTransport,
-    sgstTransport,
-    totalOtherExpenses,
-    perItemOtherExpense,
-    totalPurchaseAmount,
-    grandTotalPurchaseAmount,
-  } = calculateTotals();
-
-  // Handle Form Submission
-  const submitHandler = async () => {
-    setError("");
-
-    if (!sellerName || !invoiceNo || items.length === 0) {
-      setError("All fields are required before submission.");
+  // Add item
+  const addItem = () => {
+    // Validate required fields
+    if (
+      !itemId ||
+      !itemName ||
+      !itemBrand ||
+      !itemCategory ||
+      !itemPurchaseUnit ||
+      !itemSellingUnit ||
+      !psRatio ||
+      itemQuantity === "" ||
+      itemPurchasePrice === "" ||
+      itemGstPercent === "" ||
+      mrp === ""
+    ) {
+      setError("Please fill in all required fields before adding an item.");
       setShowErrorModal(true);
       return;
     }
 
-    // Prepare purchase data
-    const purchaseData = {
+    const parsedQty = parseFloat(itemQuantity);
+    const parsedPrice = parseFloat(itemPurchasePrice);
+    const parsedGst = parseFloat(itemGstPercent);
+    const parsedRatio = parseFloat(psRatio);
+
+    if (
+      isNaN(parsedQty) ||
+      parsedQty <= 0 ||
+      isNaN(parsedPrice) ||
+      parsedPrice < 0 ||
+      isNaN(parsedGst) ||
+      parsedGst < 0 ||
+      isNaN(parsedRatio) ||
+      parsedRatio <= 0
+    ) {
+      setError("Invalid numeric values for Quantity, Price, GST, or Ratio.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    // Check for duplicates
+    if (items.some((it) => it.itemId === itemId)) {
+      setError("This item ID already exists. Please adjust quantity instead.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    // Compute quantityInNumbers
+    const purchaseUnitCap = itemPurchaseUnit.toUpperCase();
+    const quantityInNumbers =
+      purchaseUnitCap === "BOX" || purchaseUnitCap === "PACK"
+        ? parsedQty * parsedRatio
+        : parsedQty;
+
+    const newItem = {
+      itemId,
+      name: itemName,
+      brand: itemBrand,
+      category: itemCategory,
+      purchaseUnit: itemPurchaseUnit,
+      sellingUnit: itemSellingUnit,
+      psRatio: parsedRatio,
+      quantity: parsedQty,
+      quantityInNumbers,
+      purchasePrice: parsedPrice,
+      gstPercent: parsedGst,
+      expiryDate: itemExpiry,
+      mrp,
+    };
+    setItems([newItem, ...items]);
+    clearItemFields();
+    setMessage("Item added successfully!");
+    itemIdRef.current?.focus();
+  };
+
+  // Remove item
+  const removeItem = (index) => {
+    if (window.confirm("Are you sure you want to remove this item?")) {
+      const updated = items.filter((_, i) => i !== index);
+      setItems(updated);
+      setMessage("Item removed.");
+    }
+  };
+
+  // Edit item field
+  const handleItemFieldChange = (index, field, value) => {
+    const updatedItems = [...items];
+    updatedItems[index][field] = value;
+
+    // Recalc if quantity, purchaseUnit, or psRatio changed
+    if (field === "quantity" || field === "purchaseUnit" || field === "psRatio") {
+      const current = updatedItems[index];
+      const qty = parseFloat(current.quantity) || 0;
+      const ratio = parseFloat(current.psRatio) || 1;
+      const unit = current.purchaseUnit.toUpperCase();
+      updatedItems[index].quantityInNumbers =
+        unit === "BOX" || unit === "PACK" ? qty * ratio : qty;
+    }
+    setItems(updatedItems);
+  };
+
+  // Transport name changes => fetch GST if known
+  const handleTransportNameChange = async (e) => {
+    try {
+      setTransportCompany(e.target.value);
+      if (e.target.value && e.target.value !== "add-custom") {
+        const { data } = await api.get(
+          `/api/transportpayments/name/${e.target.value}`
+        );
+        if (data.transportGst) {
+          setTransportGst(data.transportGst);
+        }
+      } else {
+        setTransportGst("");
+      }
+    } catch (err) {
+      setError("Error fetching transporter details.");
+      setShowErrorModal(true);
+      setTransportGst("");
+    }
+  };
+
+  //----------------------------------------------------------------------
+  // CALCULATE TOTALS
+  //----------------------------------------------------------------------
+  const calculateTotals = () => {
+    let netItemTotal = 0;
+    let totalGstAmount = 0;
+    items.forEach((item) => {
+      const subTotal = item.quantity * item.purchasePrice;
+      const gstVal = (subTotal * item.gstPercent) / 100;
+      netItemTotal += subTotal;
+      totalGstAmount += gstVal;
+    });
+    const transportCost = parseFloat(transportAmount || 0);
+    const otherCost = parseFloat(otherExpense || 0);
+
+    const purchaseTotal = netItemTotal + totalGstAmount;
+    const grandTotal = purchaseTotal + transportCost + otherCost;
+
+    return {
+      netItemTotal,
+      totalGstAmount,
+      transportCost,
+      otherCost,
+      purchaseTotal,
+      grandTotal,
+    };
+  };
+  const {
+    netItemTotal,
+    totalGstAmount,
+    transportCost,
+    otherCost,
+    purchaseTotal,
+    grandTotal,
+  } = calculateTotals();
+
+  //----------------------------------------------------------------------
+  // UPDATE HANDLER
+  //----------------------------------------------------------------------
+  const updateHandler = async () => {
+    if (!sellerName || !invoiceNo || items.length === 0) {
+      setError("Please fill all required fields and add at least one item.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    // Conditionally build transport details if user has chosen a company
+    let transportationDetails = null;
+    if (transportCompany.trim()) {
+      transportationDetails = {
+        general: {
+          transportCompanyName: transportCompany,
+          transportGst,
+          transportationCharges: parseFloat(transportAmount) || 0,
+          billId: transportBillId,
+          remark: transportRemark,
+          billingDate,
+          invoiceNo,
+          transportType: "general",
+        },
+      };
+    }
+
+    // Prepare updated data
+    const updatedData = {
       sellerId,
       sellerName,
       sellerAddress,
@@ -639,90 +564,57 @@ export default function EditPurchaseScreen() {
       purchaseId,
       billingDate,
       invoiceDate,
-      items: items.map((item) => ({
-        itemId: item.itemId || itemId,
-        name: item.name,
-        brand: item.brand,
-        category: item.category,
-        quantity: item.quantity,
-        quantityInNumbers: item.quantityInNumbers,
-        pUnit: item.pUnit,
-        sUnit: item.sUnit,
-        psRatio: item.psRatio,
-        length: item.length,
-        breadth: item.breadth,
-        size: item.size,
-        actLength: item.actLength,
-        actBreadth: item.actBreadth,
-        billPartPrice: item.billPrice,
-        cashPartPrice: item.cashPrice,
-        billPartPriceInNumbers: item.billPriceInNumbers,
-        cashPartPriceInNumbers: item.cashPriceInNumbers,
-        allocatedOtherExpense: perItemOtherExpense * item.quantityInNumbers,
-        totalPriceInNumbers:  item.billPriceInNumbers + item.cashPriceInNumbers + perItemOtherExpense
+      items: items.map((it) => ({
+        itemId: it.itemId,
+        name: it.name,
+        brand: it.brand,
+        category: it.category,
+        purchaseUnit: it.purchaseUnit,
+        sellingUnit: it.sellingUnit,
+        psRatio: it.psRatio,
+        quantity: it.quantity,
+        quantityInNumbers: it.quantityInNumbers,
+        purchasePrice: it.purchasePrice,
+        gstPercent: it.gstPercent,
+        expiryDate: it.expiryDate,
+        mrp: it.mrp,
       })),
       totals: {
-        billPartTotal,
-        cashPartTotal,
-        amountWithoutGSTItems,
-        gstAmountItems,
-        cgstItems,
-        sgstItems,
-        amountWithoutGSTTransport,
-        gstAmountTransport,
-        cgstTransport,
-        sgstTransport,
-        unloadingCharge,
-        insurance,
-        damagePrice,
-        totalPurchaseAmount,
-        totalOtherExpenses,
-        grandTotalPurchaseAmount,
-        transportationCharges: totalTransportationCharges,
+        netItemTotal,
+        totalGstAmount,
+        transportCost,
+        otherCost,
+        purchaseTotal,
+        grandTotal,
       },
-      transportationDetails: {
-        logistic: {
-          purchaseId: purchaseId,
-          invoiceNo: invoiceNo,
-          billId: logisticBillId,
-          companyGst: logisticCompanyGst,
-          transportCompanyName: logisticCompany,
-          transportationCharges: logisticAmount,
-          remark: logisticRemark,
-        },
-        local: {
-          purchaseId: purchaseId,
-          invoiceNo: invoiceNo,
-          billId: localBillId,
-          companyGst: localCompanyGst,
-          transportCompanyName: localCompany,
-          transportationCharges: localAmount,
-          remark: localRemark,
-        }
-      },
+      transportationDetails,
+      logicField,
     };
 
     try {
       setLoading(true);
-      // Direct API call to update purchase
-      const response = await api.put(`/api/products/purchase/${purchaseId}`, purchaseData);
-      if (response.status === 200) {
+      // If using Redux, do something like: dispatch(updatePurchase(id, updatedData));
+      // For demonstration, we do a direct API call:
+      const result = await api.put(`/api/products/purchase/${id}`, updatedData);
+
+      if (result.status === 200) {
         alert("Purchase updated successfully!");
-        navigate("/allpurchases"); // Navigate to purchase listing page
+        setReturnInvoice(result.data?.invoiceNo || "Updated");
+        setSuccess(true);
       } else {
         setError("Error updating purchase. Please try again.");
         setShowErrorModal(true);
       }
     } catch (err) {
+      console.error("Error updating purchase:", err);
       setError("Error updating purchase. Please try again.");
       setShowErrorModal(true);
-      console.error("Submission error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Enter key navigation between fields
+  // Handle Enter key nav
   const changeRef = (e, nextRef) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -730,30 +622,12 @@ export default function EditPurchaseScreen() {
     }
   };
 
-
-  const handletransportNameChange = async (e, type)=> {
-    if(type === "logistic"){
-      setLogisticCompanyGst("");
-    }else{
-      setLocalCompanyGst("");
-    }
-    try{
-      const { data } = await api.get(`/api/transportpayments/name/${e.target.value}`);
-      if(type === "local"){
-        setLocalCompanyGst(data.transportGst)
-      }else if(type === "logistic"){
-        setLogisticCompanyGst(data.transportGst)
-      }
-    }catch (err){
-      setError("Error fetching transporter details.");
-      setShowErrorModal(true);
-    }
-  }
-
-
+  //----------------------------------------------------------------------
+  // RENDER
+  //----------------------------------------------------------------------
   return (
-    <div>
-      {/* Loading Indicator */}
+    <div className="relative min-h-screen bg-gray-50">
+      {/* Loading Overlay */}
       {(loading || itemLoading) && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-md shadow-md">
@@ -764,9 +638,15 @@ export default function EditPurchaseScreen() {
 
       {/* Error Modal */}
       {showErrorModal && (
-        <ErrorModal
-          message={error}
-          onClose={() => setShowErrorModal(false)}
+        <ErrorModal message={error} onClose={() => setShowErrorModal(false)} />
+      )}
+
+      {/* Success Modal */}
+      {success && (
+        <BillingSuccess
+          isAdmin={userInfo?.isAdmin}
+          estimationNo={returnInvoice}
+          onClose={() => setSuccess(false)}
         />
       )}
 
@@ -776,17 +656,19 @@ export default function EditPurchaseScreen() {
         onClick={() => navigate("/")}
       >
         <div className="text-center">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
-          <p className="text-gray-400 text-xs font-bold">
-            Edit Purchase
-          </p>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
+          <p className="text-gray-400 text-xs font-bold">Edit Purchase</p>
         </div>
         <i className="fa fa-edit text-gray-500 text-xl"></i>
       </div>
 
-      {/* Main Content */}
-      <div className={`${currentStep !== 3 && 'max-w-3xl'} mx-auto mt-8 p-6 bg-white shadow-md rounded-md`}>
-        {/* Step Indicator */}
+      {/* Main Container */}
+      <div
+        className={`mx-auto mt-8 p-6 bg-white shadow-md rounded-md ${
+          currentStep !== 3 ? "max-w-3xl" : ""
+        }`}
+      >
+        {/* Step Navigation */}
         <div className="flex justify-between mb-5">
           <div className="text-left">
             {currentStep > 1 && (
@@ -802,7 +684,7 @@ export default function EditPurchaseScreen() {
           <div className="text-right">
             {currentStep === 4 ? (
               <button
-                onClick={submitHandler}
+                onClick={updateHandler}
                 className="py-2 font-bold px-4 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs"
               >
                 Update
@@ -822,1067 +704,700 @@ export default function EditPurchaseScreen() {
           </div>
         </div>
 
-        {/* Total Amount Display */}
-        {(currentStep === 4) && (
-          <div className="bg-gray-100 p-4 rounded-lg shadow-inner mb-4">
+        {/* Step 4 summary at top */}
+        {currentStep === 4 && (
+          <div className="bg-gray-100 p-4 space-y-2 rounded-lg shadow-inner mb-4">
             <div className="flex justify-between">
-              <p className="text-xs font-bold">Bill Part Total:</p>
-              <p className="text-xs">₹{billPartTotal.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs">Amount without GST:</p>
-              <p className="text-xs">₹{amountWithoutGSTItems.toFixed(2)}</p>
+              <p className="text-xs font-bold">Net Item Total:</p>
+              <p className="text-xs">₹{netItemTotal.toFixed(2)}</p>
             </div>
             <div className="flex justify-between">
-              <p className="text-xs">CGST (9%):</p>
-              <p className="text-xs">₹{cgstItems.toFixed(2)}</p>
+              <p className="text-xs font-bold">Total GST (All Items):</p>
+              <p className="text-xs">₹{totalGstAmount.toFixed(2)}</p>
             </div>
             <div className="flex justify-between">
-              <p className="text-xs">SGST (9%):</p>
-              <p className="text-xs">₹{sgstItems.toFixed(2)}</p>
+              <p className="text-xs">Transport Charges:</p>
+              <p className="text-xs">₹{transportCost.toFixed(2)}</p>
             </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-sm font-bold">Cash Part Total:</p>
-              <p className="text-xs">₹{cashPartTotal.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-sm font-bold">Total Purchase Amount:</p>
-              <p className="text-xs font-bold">
-                ₹{totalPurchaseAmount.toFixed(2)}
-              </p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-sm font-bold">Total Other Expenses:</p>
-              <p className="text-xs">₹{totalOtherExpenses.toFixed(2)}</p>
+            <div className="flex justify-between">
+              <p className="text-xs">Other Expenses:</p>
+              <p className="text-xs">₹{otherCost.toFixed(2)}</p>
             </div>
             <div className="flex justify-between mt-2">
               <p className="text-sm font-bold">Grand Total:</p>
-              <p className="text-xs font-bold">
-                ₹{grandTotalPurchaseAmount.toFixed(2)}
-              </p>
+              <p className="text-sm font-bold">₹{grandTotal.toFixed(2)}</p>
             </div>
           </div>
         )}
 
-        {/* Form */}
-        <div>
-          <div className="space-y-8">
-            {/* Step 1: Supplier Information */}
-            {currentStep === 1 && (
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">
-                  Supplier Information
-                </h2>
-                <div className="mt-4 space-y-4">
-                  <div className="flex flex-col">
-                    <label className="mb-1 text-xs text-gray-700">
-                      Purchase ID
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Purchase ID"
-                      value={purchaseId}
-                      ref={purchaseIdRef}
-                      onChange={(e) => setPurchaseId(e.target.value)}
-                      onKeyDown={(e) => changeRef(e, sellerNameRef)}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md bg-gray-100 focus:outline-none text-xs"
-                      required
-                      readOnly
-                      disabled
-                    />
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label className="mb-1 text-xs text-gray-700">
-                      Supplier Name
-                    </label>
-                    <input
-                      type="text"
-                      ref={sellerNameRef}
-                      value={sellerName}
-                      placeholder="Enter Supplier Name"
-                      onChange={handleSellerNameChange}
-                      onKeyDown={(e) =>{ changeRef(e, invoiceNoRef); if(!sellerId && e.key === "Enter"){ generateSellerId()  } }}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      required
-                    />
-                    {/* Suggestions Dropdown */}
-                    {sellerSuggestions.length > 0 && (
-                      <ul className="border border-gray-300 mt-1 rounded-md shadow-md max-h-40 overflow-y-auto">
-                        {sellerSuggestions.map((suggestion, index) => (
-                          <li
-                            key={index}
-                            className={`p-3 text-xs border-t cursor-pointer hover:bg-gray-100 ${
-                              selectedSuggestionIndex === index
-                                ? "bg-gray-200"
-                                : ""
-                            }`}
-                            onClick={() => handleSelectSeller(suggestion)}
-                          >
-                            {suggestion.sellerName}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {/* Seller ID */}
-                  <div className="flex flex-col">
-                    <label className="mb-1 text-xs text-gray-700">
-                      Supplier ID
-                    </label>
-                    <input
-                      type="text"
-                      ref={sellerIdRef}
-                      value={sellerId}
-                      placeholder="Supplier ID"
-                      onChange={(e) => setSellerId(e.target.value)}
-                      onKeyDown={(e) =>{ changeRef(e, invoiceNoRef); }}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md bg-gray-100 focus:outline-none text-xs"
-                      readOnly
-                    />
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label className="mb-1 text-xs text-gray-700">
-                      Invoice No.
-                    </label>
-                    <input
-                      type="text"
-                      ref={invoiceNoRef}
-                      value={invoiceNo}
-                      placeholder="Enter invoice number"
-                      onChange={(e) => setInvoiceNo(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") setCurrentStep(2);
-                      }}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      required
-                    />
-                  </div>
-                </div>
+        {/* STEP 1: Supplier Info */}
+        {currentStep === 1 && (
+          <div>
+            <h2 className="text-sm font-bold text-gray-900">Supplier Information</h2>
+            <div className="mt-4 space-y-4">
+              {/* Purchase ID */}
+              <div className="flex flex-col">
+                <label className="text-xs flex justify-between mb-1 text-gray-700">
+                  Purchase ID
+                  {lastBillId && (
+                    <span className="text-xs italic text-gray-400">
+                      Last Billed: {lastBillId}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  placeholder="Purchase ID"
+                  value={purchaseId}
+                  ref={purchaseIdRef}
+                  onChange={(e) => setPurchaseId(e.target.value)}
+                  onKeyDown={(e) => changeRef(e, sellerNameRef)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md bg-gray-100 focus:outline-none text-xs"
+                  readOnly
+                />
               </div>
-            )}
 
-            {/* Step 2: Supplier Details */}
-            {currentStep === 2 && (
-              <div className="space-y-4">
-                <div className="flex flex-col">
-                  <label className="text-xs mb-1 text-gray-700">
-                    Supplier Address
-                  </label>
-                  <input
-                    type="text"
-                    ref={sellerAddressRef}
-                    placeholder="Supplier Address"
-                    value={sellerAddress}
-                    onKeyDown={(e) => changeRef(e, sellerGstRef)}
-                    onChange={(e) => setSellerAddress(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                    required
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <label className="text-xs mb-1 text-gray-700">
-                    Supplier GSTIN
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Supplier GST"
-                    ref={sellerGstRef}
-                    value={sellerGst}
-                    onKeyDown={(e) => changeRef(e, billingDateRef)}
-                    onChange={(e) => setSellerGst(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                    required
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <label className="text-xs mb-1 text-gray-700">
-                    Billing Date
-                  </label>
-                  <input
-                    type="date"
-                    value={billingDate}
-                    ref={billingDateRef}
-                    onKeyDown={(e) => changeRef(e, invoiceDateRef)}
-                    onChange={(e) => setBillingDate(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <label className="text-xs mb-1 text-gray-700">
-                    Invoice Date
-                  </label>
-                  <input
-                    type="date"
-                    ref={invoiceDateRef}
-                    value={invoiceDate}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") setCurrentStep(3);
-                    }}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Add/Edit Items */}
-            {currentStep === 3 && (
-  <div className="flex flex-col min-h-screen">
-    <h2 className="text-sm font-bold text-gray-900 p-4">Add/Edit Items</h2>
-    {/* Items Table */}
-    {items.length > 0 && (
-      <div className="flex-1 overflow-auto p-4">
-        {/* Desktop Table */}
-        <div className="hidden md:block">
-          <table className="min-w-full table-auto bg-white shadow-md rounded-md">
-            <thead>
-              <tr className="bg-red-500 text-white text-xs">
-                <th className="px-2 py-2 text-left">Item ID</th>
-                <th className="px-2 py-2 text-left">Name</th>
-                <th className="px-2 py-2 text-left">Brand</th>
-                <th className="px-2 py-2 text-left">Category</th>
-                <th className="px-2 py-2 text-left">Quantity</th>
-                <th className="px-2 py-2 text-left">Unit</th>
-                <th className="px-2 py-2 text-left">Bill Price (₹)</th>
-                <th className="px-2 py-2 text-left">Cash Price (₹)</th>
-                <th className="px-2 py-2 text-left">Quantity (NOS)</th>
-                <th className="px-2 py-2 text-left">Bill Price per NOS (₹)</th>
-                <th className="px-2 py-2 text-left">Cash Price per NOS (₹)</th>
-                <th className="px-2 py-2 text-left">Total (₹)</th>
-                <th className="px-2 py-2 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-600 text-xs">
-              {items.map((item, index) => {
-                function preciseAdd(...numbers) {
-                  return (
-                    numbers.reduce((acc, num) => acc + Math.round(num * 100), 0) /
-                    100
-                  );
-                }
-
-                const parsedbillprice =
-                  parseFloat(item.billPriceInNumbers) || 0;
-                const parsedcashprice =
-                  parseFloat(item.cashPriceInNumbers) || 0;
-                const quantity = parseFloat(item.quantityInNumbers) || 0;
-
-                const totalUnitPrice = preciseAdd(
-                  parsedbillprice,
-                  parsedcashprice
-                );
-
-                const totalamount = parseFloat(
-                  (quantity * totalUnitPrice).toFixed(2)
-                );
-
-                return (
-                  <tr
-                    key={index}
-                    className={`border-b hover:bg-gray-100 ${
-                      index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                    }`}
-                  >
-                    <td className="px-2 py-2">{item.itemId}</td>
-                    <td className="px-2 py-2">{item.name}</td>
-                    <td className="px-2 py-2">{item.brand}</td>
-                    <td className="px-2 py-2">{item.category}</td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        min="1"
-                        step="0.01"
-                        onChange={(e) =>
-                          handleItemFieldChange(
-                            index,
-                            "quantity",
-                            e.target.value
-                          )
-                        }
-                        className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      />
-                    </td>
-                    <td className="px-2 py-2">{item.pUnit}</td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="number"
-                        value={item.billPrice}
-                        min="0"
-                        step="0.01"
-                        onChange={(e) =>
-                          handleItemFieldChange(
-                            index,
-                            "billPrice",
-                            e.target.value
-                          )
-                        }
-                        className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      />
-                    </td>
-                    <td className="px-2 py-2">
-                      <input
-                        type="number"
-                        value={item.cashPrice}
-                        min="0"
-                        step="0.01"
-                        onChange={(e) =>
-                          handleItemFieldChange(
-                            index,
-                            "cashPrice",
-                            e.target.value
-                          )
-                        }
-                        className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      />
-                    </td>
-                    <td className="px-2 py-2">
-                      {item.quantityInNumbers.toFixed(2)}
-                    </td>
-                    <td className="px-2 py-2">
-                      {item.billPriceInNumbers.toFixed(2)}
-                    </td>
-                    <td className="px-2 py-2">
-                      {item.cashPriceInNumbers.toFixed(2)}
-                    </td>
-                    <td className="px-2 py-2">{totalamount.toFixed(2)}</td>
-                    <td className="px-2 py-2 text-center">
-                      <button
-                        onClick={() => removeItem(index)}
-                        className="text-red-600 hover:text-red-800 text-xs"
+              {/* Supplier Name */}
+              <div className="flex flex-col">
+                <label className="mb-1 text-xs text-gray-700">Supplier Name</label>
+                <input
+                  type="text"
+                  ref={sellerNameRef}
+                  value={sellerName}
+                  placeholder="Enter Supplier Name"
+                  onChange={handleSellerNameChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setSelectedSuggestionIndex((prev) =>
+                        prev < sellerSuggestions.length - 1 ? prev + 1 : prev
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setSelectedSuggestionIndex((prev) =>
+                        prev > 0 ? prev - 1 : prev
+                      );
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (
+                        selectedSuggestionIndex >= 0 &&
+                        selectedSuggestionIndex < sellerSuggestions.length
+                      ) {
+                        const selected = sellerSuggestions[selectedSuggestionIndex];
+                        handleSelectSeller(selected);
+                        setSelectedSuggestionIndex(-1);
+                      } else {
+                        generateSellerId();
+                        invoiceNoRef.current?.focus();
+                      }
+                    }
+                  }}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                />
+                {/* Seller Suggestions */}
+                {sellerSuggestions.length > 0 && (
+                  <ul className="border border-gray-300 divide-y mt-1 rounded-md shadow-md max-h-40 overflow-y-auto bg-white">
+                    {sellerSuggestions.map((suggestion, idx) => (
+                      <li
+                        key={idx}
+                        className={`p-2 text-xs cursor-pointer hover:bg-gray-100 ${
+                          idx === selectedSuggestionIndex ? "bg-gray-200" : ""
+                        }`}
+                        onClick={() => {
+                          handleSelectSeller(suggestion);
+                          setSelectedSuggestionIndex(-1);
+                        }}
                       >
-                        <i className="fa fa-trash" aria-hidden="true"></i>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="block md:hidden">
-          <div className="space-y-4">
-            {items.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white shadow-lg rounded-lg p-4 border"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-xs font-bold">
-                    {item.name} - {item.itemId}
-                  </p>
-                  <button
-                    onClick={() => removeItem(index)}
-                    className="text-red-600 hover:text-red-800 text-xs"
-                  >
-                    <i className="fa fa-trash" aria-hidden="true"></i>
-                  </button>
-                </div>
-                <p className="text-xs">Brand: {item.brand}</p>
-                <p className="text-xs">Category: {item.category}</p>
-                <p className="text-xs">
-                  Quantity:{" "}
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    step="0.01"
-                    onChange={(e) =>
-                      handleItemFieldChange(index, "quantity", e.target.value)
-                    }
-                    className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  />{" "}
-                  {item.pUnit}
-                </p>
-                <p className="text-xs">
-                  Bill Price:{" "}
-                  <input
-                    type="number"
-                    value={item.billPrice}
-                    min="0"
-                    step="0.01"
-                    onChange={(e) =>
-                      handleItemFieldChange(
-                        index,
-                        "billPrice",
-                        e.target.value
-                      )
-                    }
-                    className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  />
-                </p>
-                <p className="text-xs">
-                  Cash Price:{" "}
-                  <input
-                    type="number"
-                    value={item.cashPrice}
-                    min="0"
-                    step="0.01"
-                    onChange={(e) =>
-                      handleItemFieldChange(
-                        index,
-                        "cashPrice",
-                        e.target.value
-                      )
-                    }
-                    className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  />
-                </p>
-                <p className="text-xs">
-                  Quantity (NOS): {item.quantityInNumbers.toFixed(2)}
-                </p>
-                <p className="text-xs">
-                  Bill Price per NOS: ₹{item.billPriceInNumbers.toFixed(2)}
-                </p>
-                <p className="text-xs">
-                  Cash Price per NOS: ₹{item.cashPriceInNumbers.toFixed(2)}
-                </p>
-                <p className="text-xs">
-                  Total: ₹
-                  {(
-                    item.quantityInNumbers *
-                    (item.billPriceInNumbers + item.cashPriceInNumbers)
-                  ).toFixed(2)}
-                </p>
+                        {suggestion.sellerName}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )}
 
-    {/* Input Section */}
-    <div className="p-4 md:fixed bottom-0 left-0 right-0 bg-white shadow-inner">
-      <div className="md:flex justify-between space-x-2">
-        {/* Left Section: Input Fields */}
-        <div className="flex-1">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Seller ID */}
               <div className="flex flex-col">
-                <label className="mb-1 flex items-center text-xs text-gray-700">
-                  <span>Item ID</span>
-                  <span className="italic ml-auto text-gray-300">
-                    Last Item: {lastItemId || "Not found"}
-                  </span>
-                </label>
+                <label className="mb-1 text-xs text-gray-700">Supplier ID</label>
                 <input
                   type="text"
-                  ref={itemIdRef}
-                  value={itemId}
+                  ref={sellerIdRef}
+                  value={sellerId}
+                  placeholder="Supplier ID"
+                  onChange={(e) => setSellerId(e.target.value)}
+                  onKeyDown={(e) => changeRef(e, invoiceNoRef)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md bg-gray-100 focus:outline-none text-xs"
+                  readOnly
+                />
+              </div>
+
+              {/* Invoice No */}
+              <div className="flex flex-col">
+                <label className="mb-1 text-xs text-gray-700">Invoice No.</label>
+                <input
+                  type="text"
+                  ref={invoiceNoRef}
+                  value={invoiceNo}
+                  placeholder="Enter invoice number"
+                  onChange={(e) => setInvoiceNo(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearchItem();
-                    }
+                    if (e.key === "Enter") setCurrentStep(2);
                   }}
-                  onChange={(e) => setItemId(e.target.value)}
                   className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
                 />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Item Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter Item Name"
-                  ref={itemNameRef}
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  onKeyDown={(e) => changeRef(e, itemBrandRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Item Brand</label>
-                <input
-                  type="text"
-                  placeholder="Enter Item Brand"
-                  ref={itemBrandRef}
-                  value={itemBrand}
-                  onChange={(e) => setItemBrand(e.target.value)}
-                  onKeyDown={(e) => changeRef(e, itemCategoryRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">
-                  Item Category
-                </label>
-                <select
-                  value={itemCategory}
-                  ref={itemCategoryRef}
-                  onChange={(e) => setItemCategory(e.target.value)}
-                  onKeyDown={(e) => changeRef(e, itemSunitRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Category
-                  </option>
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">S Unit</label>
-                <select
-                  value={sUnit}
-                  onChange={(e) => setSUnit(e.target.value)}
-                  ref={itemSunitRef}
-                  onKeyDown={(e) => changeRef(e, itemPsRatioRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
-                >
-                  <option value="NOS">NOS</option>
-                  <option value="SQFT">SQFT</option>
-                  <option value="BOX">BOX</option>
-                  <option value="GSQFT">GSQFT</option>
-                </select>
               </div>
             </div>
-
-            {/* Dimensions and Ratios */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">P/S Ratio</label>
-                <input
-                  type="number"
-                  placeholder="Enter P/S Ratio"
-                  value={psRatio}
-                  ref={itemPsRatioRef}
-                  onKeyDown={(e) => changeRef(e, itemlengthRef)}
-                  onChange={(e) => setPsRatio(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Length</label>
-                <input
-                  type="number"
-                  placeholder="Enter Length"
-                  value={length}
-                  ref={itemlengthRef}
-                  onKeyDown={(e) => changeRef(e, itemBreadthRef)}
-                  onChange={(e) => setLength(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Breadth</label>
-                <input
-                  type="number"
-                  ref={itemBreadthRef}
-                  placeholder="Enter Breadth"
-                  value={breadth}
-                  onKeyDown={(e) => changeRef(e, actLengthRef)}
-                  onChange={(e) => setBreadth(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="flex flex-col">
-            <label className="text-xs text-gray-700 mb-1">Act Length</label>
-            <input
-              type="number"
-              ref={actLengthRef}
-              placeholder="Enter Act Length"
-              value={actLength}
-              onKeyDown={(e) => changeRef(e, actBreadthRef)}
-              onChange={(e) => setActLength(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-              min="0"
-              step="0.01"
-            />
           </div>
+        )}
 
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-700 mb-1">Act Breadth</label>
-            <input
-              type="number"
-              ref={actBreadthRef}
-              placeholder="Enter Act Breadth"
-              value={actBreadth}
-              onKeyDown={(e) => changeRef(e, itemSizeRef)}
-              onChange={(e) => setActBreadth(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-              min="0"
-              step="0.01"
-            />
-          </div>
-
-          
-            </div>
-
-            {/* Quantity and Prices */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-
+        {/* STEP 2: Supplier Address & Dates */}
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            {/* Supplier Address */}
             <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Size</label>
-                <input
-                  type="text"
-                  placeholder="Enter Size"
-                  value={size}
-                  ref={itemSizeRef}
-                  onKeyDown={(e) => changeRef(e, itemUnitRef)}
-                  onChange={(e) => setSize(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                />
-              </div>
+              <label className="text-xs mb-1 text-gray-700">Supplier Address</label>
+              <input
+                type="text"
+                ref={sellerAddressRef}
+                placeholder="Supplier Address"
+                value={sellerAddress}
+                onKeyDown={(e) => changeRef(e, sellerGstRef)}
+                onChange={(e) => setSellerAddress(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+              />
+            </div>
 
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">P Unit</label>
-                <select
-                  value={itemUnit}
-                  onChange={(e) => setItemUnit(e.target.value)}
-                  ref={itemUnitRef}
-                  onKeyDown={(e) => changeRef(e, itemQuantityRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Unit
-                  </option>
-                  <option value="SQFT">SQFT</option>
-                  <option value="BOX">BOX</option>
-                  <option value="NOS">NOS</option>
-                  <option value="GSQFT">GSQFT</option>
-                </select>
-              </div>
+            {/* Supplier GSTIN */}
+            <div className="flex flex-col">
+              <label className="text-xs mb-1 text-gray-700">Supplier GSTIN</label>
+              <input
+                type="text"
+                placeholder="Supplier GST"
+                ref={sellerGstRef}
+                value={sellerGst}
+                onKeyDown={(e) => changeRef(e, billingDateRef)}
+                onChange={(e) => setSellerGst(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+              />
+            </div>
 
+            {/* Billing Date */}
+            <div className="flex flex-col">
+              <label className="text-xs mb-1 text-gray-700">Billing Date</label>
+              <input
+                type="date"
+                ref={billingDateRef}
+                value={billingDate}
+                onKeyDown={(e) => changeRef(e, invoiceDateRef)}
+                onChange={(e) => setBillingDate(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+              />
+            </div>
 
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">Quantity</label>
-                <input
-                  type="number"
-                  placeholder="Enter Quantity"
-                  value={itemQuantity}
-                  ref={itemQuantityRef}
-                  onChange={(e) => setItemQuantity(e.target.value)}
-                  onKeyDown={(e) => changeRef(e, itemBillPriceRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="1"
-                  step="0.01"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">
-                  Bill Part Price (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Enter Bill Part Price"
-                  value={itemBillPrice}
-                  ref={itemBillPriceRef}
-                  onChange={(e) => setItemBillPrice(e.target.value)}
-                  onKeyDown={(e) => changeRef(e, itemCashPriceRef)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-700 mb-1">
-                  Cash Part Price (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Enter Cash Part Price"
-                  value={itemCashPrice}
-                  ref={itemCashPriceRef}
-                  onChange={(e) => setItemCashPrice(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      addItem();
-                    }
-                  }}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-              </div>
-
+            {/* Invoice Date */}
+            <div className="flex flex-col">
+              <label className="text-xs mb-1 text-gray-700">Invoice Date</label>
+              <input
+                type="date"
+                ref={invoiceDateRef}
+                value={invoiceDate}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setCurrentStep(3);
+                }}
+                onChange={(e) => setInvoiceDate(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+              />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Middle Section: Stock and GST Info */}
-       <div className="hidden lg:block w-44">
-          <div className="bg-gray-100 p-6 h-full rounded-lg shadow-inner">
-            <div className="">
-            <div className="flex justify-between">
-              <p className="text-sm font-bold">GST:</p>
-              <p className="text-sm">18%</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs font-bold">Added Products:</p>
-              <p className="text-xs">{items?.length}</p>
-            </div>
-            </div>
-            <div className="flex my-2 mx-auto text-center">
-            <button
-              type="button"
-              onClick={addItem}
-              className="bg-red-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-600 text-xs w-full md:w-auto"
-            >
-              Add Item
-            </button>
-          </div>
-            <div className="bg-gray-300 p-5 mt-4 rounded-lg">
-            <div className="flex justify-between">
-              <p className="text-xs font-bold">Current Item</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs font-bold">Stock:</p>
-              <p className="text-xs">{itemstock.toString().slice(0,8)} {sUnit}</p>
-            </div>
-              </div>
-          </div>
-        </div>
-
-        {/* Right Section: Summary */}
-        <div className="w-full md:w-60 mt-4 md:mt-0">
-          <div className="bg-gray-100 w-full p-4 space-y-2 rounded-lg shadow-inner">
-            <div className="flex justify-between">
-              <p className="text-xs font-bold">Bill Part Total:</p>
-              <p className="text-xs">{billPartTotal.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs">Amount without GST:</p>
-              <p className="text-xs">{amountWithoutGSTItems.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs">CGST (9%):</p>
-              <p className="text-xs">{cgstItems.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-xs">SGST (9%):</p>
-              <p className="text-xs">{sgstItems.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-xs font-bold">Cash Part Total:</p>
-              <p className="text-xs">{cashPartTotal.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-xs font-bold">Purchase Amount:</p>
-              <p className="text-xs font-bold">
-                {totalPurchaseAmount.toFixed(2)}
+        {/* STEP 3: Items */}
+        {currentStep === 3 && (
+          <div className="flex flex-col min-h-screen">
+            {items.length === 0 && (
+              <p className="text-sm font-bold text-center text-gray-300">
+                No Products Added
               </p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-xs font-bold">Total Other Expenses:</p>
-              <p className="text-xs">{totalOtherExpenses.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between mt-2">
-              <p className="text-sm font-bold">Grand Total:</p>
-              <p className="text-sm font-bold">
-                {grandTotalPurchaseAmount.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            )}
 
+            {/* Items Table / List */}
+            <div className="flex-1 overflow-auto p-4">
+              {items.length > 0 && (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block">
+                    <table className="min-w-full table-auto bg-white shadow-md rounded-md">
+                      <thead>
+                        <tr className="bg-red-500 text-white text-xs">
+                          <th className="px-2 py-2 text-left">Item ID</th>
+                          <th className="px-2 py-2 text-left">Name</th>
+                          <th className="px-2 py-2 text-left">Brand</th>
+                          <th className="px-2 py-2 text-left">Category</th>
+                          <th className="px-2 py-2 text-left">Purchase Unit</th>
+                          <th className="px-2 py-2 text-left">Selling Unit</th>
+                          <th className="px-2 py-2 text-left">PS Ratio</th>
+                          <th className="px-2 py-2 text-left">Qty</th>
+                          <th className="px-2 py-2 text-left">Qty in Numbers</th>
+                          <th className="px-2 py-2 text-left">P.Price</th>
+                          <th className="px-2 py-2 text-left">M.R.P</th>
+                          <th className="px-2 py-2 text-left">GST %</th>
+                          <th className="px-2 py-2 text-left">Expiry</th>
+                          <th className="px-2 py-2 text-left">Subtotal</th>
+                          <th className="px-2 py-2 text-left">GST Amt</th>
+                          <th className="px-2 py-2 text-left">Total</th>
+                          <th className="px-2 py-2 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-gray-600 text-xs">
+                        {items.map((item, index) => {
+                          const subTotal = item.quantity * item.purchasePrice;
+                          const gstValue = (subTotal * item.gstPercent) / 100;
+                          const lineTotal = subTotal + gstValue;
 
-            {/* Step 4: Transportation Details */}
-            {currentStep === 4 && (
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">
-                  Other Expenses
-                </h2>
-
-                <div className="flex justify-between mt-2 space-x-2 mb-5">
-                  <div className="w-full">
-                    <label className="text-xs text-gray-700 mb-1">
-                      Unloading Charge
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Enter Unloading Charge"
-                      value={unloadingCharge}
-                      onChange={(e) => setUnloadCharge(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      min="0"
-                      step="0.01"
-                    />
+                          return (
+                            <tr
+                              key={index}
+                              className={`border-b hover:bg-gray-100 ${
+                                index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                              }`}
+                            >
+                              <td className="px-2 py-2">{item.itemId}</td>
+                              <td className="px-2 py-2">{item.name}</td>
+                              <td className="px-2 py-2">{item.brand}</td>
+                              <td className="px-2 py-2">{item.category}</td>
+                              <td className="px-2 py-2">{item.purchaseUnit}</td>
+                              <td className="px-2 py-2">{item.sellingUnit}</td>
+                              <td className="px-2 py-2">{item.psRatio}</td>
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  value={item.quantity}
+                                  min="1"
+                                  step="0.01"
+                                  onChange={(e) =>
+                                    handleItemFieldChange(
+                                      index,
+                                      "quantity",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-14 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                                />
+                              </td>
+                              <td className="px-2 py-2">
+                                {item.quantityInNumbers.toFixed(2)}
+                              </td>
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  value={item.purchasePrice}
+                                  min="0"
+                                  step="0.01"
+                                  onChange={(e) =>
+                                    handleItemFieldChange(
+                                      index,
+                                      "purchasePrice",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-16 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                                />
+                              </td>
+                              <td className="px-2 py-2">{item.mrp}</td>
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  value={item.gstPercent}
+                                  min="0"
+                                  step="0.01"
+                                  onChange={(e) =>
+                                    handleItemFieldChange(
+                                      index,
+                                      "gstPercent",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-14 border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                                />
+                              </td>
+                              <td className="px-2 py-2">
+                                <input
+                                  type="date"
+                                  value={item.expiryDate}
+                                  onChange={(e) =>
+                                    handleItemFieldChange(
+                                      index,
+                                      "expiryDate",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                                />
+                              </td>
+                              <td className="px-2 py-2">
+                                ₹{subTotal.toFixed(2)}
+                              </td>
+                              <td className="px-2 py-2">
+                                ₹{gstValue.toFixed(2)}
+                              </td>
+                              <td className="px-2 py-2">
+                                ₹{lineTotal.toFixed(2)}
+                              </td>
+                              <td className="px-2 py-2 text-center">
+                                <button
+                                  onClick={() => removeItem(index)}
+                                  className="text-red-600 hover:text-red-800 text-xs"
+                                >
+                                  <i className="fa fa-trash" aria-hidden="true"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
 
-                  <div className="w-full">
-                    <label className="text-xs text-gray-700 mb-1">
-                      Insurance
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Enter Insurance Amount"
-                      value={insurance}
-                      onChange={(e) => setInsurance(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      min="0"
-                      step="0.01"
-                    />
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden">
+                    <div className="space-y-4">
+                      {items.map((item, index) => {
+                        const subTotal = item.quantity * item.purchasePrice;
+                        const gstValue = (subTotal * item.gstPercent) / 100;
+                        const lineTotal = subTotal + gstValue;
+                        return (
+                          <div
+                            key={index}
+                            className="bg-white shadow-lg rounded-lg p-4 border"
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <p className="text-xs font-bold">
+                                {item.name} - {item.itemId}
+                              </p>
+                              <button
+                                onClick={() => removeItem(index)}
+                                className="text-red-600 hover:text-red-800 text-xs"
+                              >
+                                <i className="fa fa-trash" aria-hidden="true"></i>
+                              </button>
+                            </div>
+                            <p className="text-xs">Brand: {item.brand}</p>
+                            <p className="text-xs">Category: {item.category}</p>
+                            <p className="text-xs">
+                              Purchase Unit: {item.purchaseUnit}
+                            </p>
+                            <p className="text-xs">
+                              Selling Unit: {item.sellingUnit}
+                            </p>
+                            <p className="text-xs">PS Ratio: {item.psRatio}</p>
+                            <div className="flex items-center text-xs mt-1">
+                              <label className="w-24">Qty:</label>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                min="1"
+                                step="0.01"
+                                onChange={(e) =>
+                                  handleItemFieldChange(
+                                    index,
+                                    "quantity",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs w-16"
+                              />
+                            </div>
+                            <div className="flex items-center text-xs mt-1">
+                              <label className="w-24">Qty in Numbers:</label>
+                              <input
+                                type="number"
+                                disabled
+                                value={item.quantityInNumbers.toFixed(2)}
+                                className="border border-gray-300 px-1 py-1 rounded-md bg-gray-100 text-xs w-16"
+                              />
+                            </div>
+                            <div className="flex items-center text-xs mt-1">
+                              <label className="w-24">Price:</label>
+                              <input
+                                type="number"
+                                value={item.purchasePrice}
+                                min="0"
+                                step="0.01"
+                                onChange={(e) =>
+                                  handleItemFieldChange(
+                                    index,
+                                    "purchasePrice",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs w-20"
+                              />
+                            </div>
+                            <div className="flex items-center text-xs mt-1">
+                              <label className="w-24">GST %:</label>
+                              <input
+                                type="number"
+                                value={item.gstPercent}
+                                min="0"
+                                step="0.01"
+                                onChange={(e) =>
+                                  handleItemFieldChange(
+                                    index,
+                                    "gstPercent",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs w-16"
+                              />
+                            </div>
+                            <div className="flex items-center text-xs mt-1">
+                              <label className="w-24">Expiry:</label>
+                              <input
+                                type="date"
+                                value={item.expiryDate}
+                                onChange={(e) =>
+                                  handleItemFieldChange(
+                                    index,
+                                    "expiryDate",
+                                    e.target.value
+                                  )
+                                }
+                                className="border border-gray-300 px-1 py-1 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs w-32"
+                              />
+                            </div>
+                            <p className="text-xs mt-1">
+                              Subtotal: ₹{subTotal.toFixed(2)}
+                            </p>
+                            <p className="text-xs">GST: ₹{gstValue.toFixed(2)}</p>
+                            <p className="text-xs font-bold">
+                              Total: ₹{lineTotal.toFixed(2)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
+                </>
+              )}
+            </div>
 
-                  <div className="w-full">
-                    <label className="text-xs text-gray-700 mb-1">
-                      Damage Price
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Enter Damage Price"
-                      value={damagePrice}
-                      onChange={(e) => setDamagePrice(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <h2 className="text-sm font-bold text-gray-900">
-                  Transportation Details
-                </h2>
-                <div className="mt-4 space-y-6">
-                  {/* Logistic Transportation */}
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-800 mb-2">
-                      Logistic Transportation (National)
-                    </h3>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <div className="flex flex-col flex-1">
+            {/* Add new item inputs */}
+            <div className="p-4 md:fixed bottom-0 left-0 right-0 bg-white shadow-inner">
+              <div className="md:flex justify-between space-x-2">
+                {/* Left column for item inputs */}
+                <div className="flex-1">
+                  <div className="space-y-4">
+                    {/* First row */}
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                      <div className="flex flex-col">
+                        <label className="mb-1 flex items-center text-xs text-gray-700">
+                          <span>Item ID</span>
+                          <span className="italic ml-auto text-gray-300">
+                            Last Item: {lastItemId || "Not found"}
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          ref={itemIdRef}
+                          value={itemId}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSearchItem();
+                          }}
+                          onChange={(e) => setItemId(e.target.value)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                        />
+                      </div>
+                      {/* Item Name */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">Item Name</label>
+                        <input
+                          type="text"
+                          placeholder="Enter Item Name"
+                          ref={itemNameRef}
+                          value={itemName}
+                          onChange={(e) => setItemName(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemBrandRef)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                        />
+                      </div>
+                      {/* Item Brand */}
+                      <div className="flex flex-col">
                         <label className="text-xs text-gray-700 mb-1">
-                          Company
+                          Item Brand
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter Item Brand"
+                          ref={itemBrandRef}
+                          value={itemBrand}
+                          onChange={(e) => setItemBrand(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemCategoryRef)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                        />
+                      </div>
+                      {/* Category */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">Category</label>
+                        <div className="flex items-center space-x-1">
+                          <select
+                            value={itemCategory}
+                            ref={itemCategoryRef}
+                            onChange={(e) => setItemCategory(e.target.value)}
+                            onKeyDown={(e) => changeRef(e, itemPurchaseUnitRef)}
+                            className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                          >
+                            <option value="" disabled>
+                              Select Category
+                            </option>
+                            {categories.map((cat, idx) => (
+                              <option key={idx} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={addCategory}
+                            className="text-red-500 text-xs hover:text-red-700"
+                            title="Add new category"
+                          >
+                            <i className="fa fa-plus-circle"></i>
+                          </button>
+                        </div>
+                      </div>
+                      {/* Purchase Unit */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">
+                          Purchase Unit
                         </label>
                         <select
-                          value={logisticCompany}
-                          ref={logisticCompanyRef}
-                          onChange={(e) => {
-                            if (e.target.value === "add-custom") {
-                              const customCompany = prompt(
-                                "Enter custom company name:"
-                              );
-                              if (customCompany) {
-                                setTransportCompanies((prev) => [
-                                  ...prev,
-                                  customCompany,
-                                ]); // Add to the list
-                                setLogisticCompany(customCompany); // Set as selected value
-                              }
-                            } else {
-                              setLogisticCompany(e.target.value);
-                            }
-
-
-                            handletransportNameChange(e, "logistic")
-                          }}
-                          onKeyDown={(e) => changeRef(e, logisticAmountRef)}
+                          value={itemPurchaseUnit}
+                          onChange={(e) => setItemPurchaseUnit(e.target.value)}
+                          ref={itemPurchaseUnitRef}
+                          onKeyDown={(e) => changeRef(e, itemSellingUnitRef)}
                           className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
                         >
                           <option value="" disabled>
-                            Select Company
+                            Select Purchase Unit
                           </option>
-                          {transportCompanies.map((company, index) => (
-                            <option key={index} value={company}>
-                              {company}
-                            </option>
-                          ))}
-                          <option value="add-custom" className="text-red-500">
-                            Add Custom Company
-                          </option>
+                          <option value="BOX">BOX</option>
+                          <option value="PACK">PACK</option>
+                          <option value="PCS">PCS</option>
+                          <option value="KG">KG</option>
                         </select>
                       </div>
-
-                      <div className="flex flex-col flex-1">
+                      {/* Selling Unit */}
+                      <div className="flex flex-col">
                         <label className="text-xs text-gray-700 mb-1">
-                          Amount (with GST)
+                          Selling Unit
+                        </label>
+                        <select
+                          value={itemSellingUnit}
+                          onChange={(e) => setItemSellingUnit(e.target.value)}
+                          ref={itemSellingUnitRef}
+                          onKeyDown={(e) => changeRef(e, psRatioRef)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                        >
+                          <option value="" disabled>
+                            Select Selling Unit
+                          </option>
+                          <option value="PCS">PCS</option>
+                          <option value="KG">KG</option>
+                          <option value="LTR">LTR</option>
+                          <option value="GM">GM</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Second row */}
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                      {/* PS Ratio */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">PS Ratio</label>
+                        <input
+                          type="number"
+                          placeholder="e.g., 10"
+                          ref={psRatioRef}
+                          value={psRatio}
+                          onChange={(e) => setPsRatio(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemQuantityRef)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                          min="1"
+                          step="1"
+                        />
+                      </div>
+                      {/* Quantity */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">Quantity</label>
+                        <input
+                          type="number"
+                          placeholder="Enter Quantity"
+                          value={itemQuantity}
+                          ref={itemQuantityRef}
+                          onChange={(e) => setItemQuantity(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemPurchasePriceRef)}
+                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                          min="1"
+                          step="0.01"
+                        />
+                      </div>
+                      {/* Purchase Price */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">
+                          Purchase Price
                         </label>
                         <input
                           type="number"
-                          placeholder="Enter Amount"
-                          value={logisticAmount}
-                          ref={logisticAmountRef}
-                          onChange={(e) => setLogisticAmount(e.target.value)}
-                          onKeyDown={(e) => changeRef(e, localCompanyRef)}
+                          placeholder="Purchase Price"
+                          value={itemPurchasePrice}
+                          ref={itemPurchasePriceRef}
+                          onChange={(e) => setItemPurchasePrice(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, mrpRef)}
                           className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
                           min="0"
                           step="0.01"
                         />
                       </div>
-                    </div>
-                    <div className="flex justify-between mt-2 space-x-2">
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          GSTIN
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter GSTIN"
-                          value={logisticCompanyGst}
-                          onChange={(e) => setLogisticCompanyGst(e.target.value)}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                        />
-                      </div>
-
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Bill Id
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter Bill Id"
-                          value={logisticBillId}
-                          onChange={(e) => setLogisticBillId(e.target.value)}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                        />
-                      </div>
-
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Remark
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter Remark"
-                          value={logisticRemark}
-                          onChange={(e) => setLogisticRemark(e.target.value)}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Local Transportation */}
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-800 mb-2">
-                      Local Transportation (In-State)
-                    </h3>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <div className="flex flex-col flex-1">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Company
-                        </label>
-                        <select
-                          value={localCompany}
-                          ref={localCompanyRef}
-                          onChange={(e) => {
-                            if (e.target.value === "add-custom") {
-                              const customCompany = prompt(
-                                "Enter custom company name:"
-                              );
-                              if (customCompany) {
-                                setTransportCompanies((prev) => [
-                                  ...prev,
-                                  customCompany,
-                                ]); // Add to the list
-                                setLocalCompany(customCompany); // Set as selected value
-                              }
-                            } else {
-                              setLocalCompany(e.target.value);
-                            }
-
-
-                            handletransportNameChange(e, "local")
-                          }}
-                          onKeyDown={(e) => changeRef(e, localAmountRef)}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                        >
-                          <option value="" disabled>
-                            Select Company
-                          </option>
-                          {transportCompanies.map((company, index) => (
-                            <option key={index} value={company}>
-                              {company}
-                            </option>
-                          ))}
-                          <option value="add-custom" className="text-red-500">
-                            Add Custom Company
-                          </option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col flex-1">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Amount (with GST)
-                        </label>
+                      {/* M.R.P */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">M.R.P</label>
                         <input
                           type="number"
-                          placeholder="Enter Amount"
-                          value={localAmount}
-                          ref={localAmountRef}
-                          onChange={(e) => setLocalAmount(e.target.value)}
-                          onKeyDown={(e) => {}}
+                          placeholder="M.R.P"
+                          value={mrp}
+                          ref={mrpRef}
+                          onChange={(e) => setMrp(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemGstPercentRef)}
                           className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
                           min="0"
                           step="0.01"
                         />
                       </div>
-                    </div>
-                    <div className="flex justify-between mt-2 space-x-2">
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          GSTIN
-                        </label>
+                      {/* GST % */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">GST (%)</label>
                         <input
-                          type="text"
-                          placeholder="Enter GSTIN"
-                          value={localCompanyGst}
-                          onChange={(e) => setLocalCompanyGst(e.target.value)}
+                          type="number"
+                          placeholder="GST %"
+                          value={itemGstPercent}
+                          ref={itemGstPercentRef}
+                          onChange={(e) => setItemGstPercent(e.target.value)}
+                          onKeyDown={(e) => changeRef(e, itemExpiryRef)}
                           className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                          min="0"
+                          step="0.01"
                         />
                       </div>
-
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Bill Id
-                        </label>
+                      {/* Expiry Date */}
+                      <div className="flex flex-col">
+                        <label className="text-xs text-gray-700 mb-1">Expiry Date</label>
                         <input
-                          type="text"
-                          placeholder="Enter Bill Id"
-                          value={localBillId}
-                          onChange={(e) => setLocalBillId(e.target.value)}
-                          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
-                        />
-                      </div>
-
-                      <div className="w-full">
-                        <label className="text-xs text-gray-700 mb-1">
-                          Remark
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter Remark"
-                          value={localRemark}
-                          onChange={(e) => setLocalRemark(e.target.value)}
+                          type="date"
+                          value={itemExpiry}
+                          ref={itemExpiryRef}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") addItem();
+                          }}
+                          onChange={(e) => setItemExpiry(e.target.value)}
                           className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
                         />
                       </div>
@@ -1890,58 +1405,245 @@ export default function EditPurchaseScreen() {
                   </div>
                 </div>
 
-                {/* Overall Details */}
-                <div className="mt-6 bg-gray-100 p-4 rounded-lg shadow-inner">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2">
-                    Overall Details
-                  </h3>
+                {/* Right column summary + Add button (on large screens) */}
+                <div className="hidden lg:block w-44">
+                  <div className="bg-gray-100 p-6 h-full rounded-lg shadow-inner">
+                    <div>
+                      <div className="flex justify-between">
+                        <p className="text-sm font-bold">Items:</p>
+                        <p className="text-sm">{items.length}</p>
+                      </div>
+                    </div>
+                    <div className="flex my-2 mx-auto text-center">
+                      <button
+                        type="button"
+                        onClick={addItem}
+                        className="bg-red-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-600 text-xs w-full md:w-auto"
+                      >
+                        Add Item
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inline summary on Step 3 */}
+                <div className="bg-gray-100 p-4 space-y-2 rounded-lg shadow-inner mb-4">
                   <div className="flex justify-between">
-                    <p className="text-xs font-bold">Bill Part Total:</p>
-                    <p className="text-xs">₹{billPartTotal.toFixed(2)}</p>
+                    <p className="text-xs font-bold">Net Item Total:</p>
+                    <p className="text-xs">₹{netItemTotal.toFixed(2)}</p>
                   </div>
                   <div className="flex justify-between">
-                    <p className="text-xs">Subtotal (without GST):</p>
-                    <p className="text-xs">
-                      ₹{amountWithoutGSTItems.toFixed(2)}
-                    </p>
+                    <p className="text-xs font-bold">Total GST (All Items):</p>
+                    <p className="text-xs">₹{totalGstAmount.toFixed(2)}</p>
                   </div>
                   <div className="flex justify-between">
-                    <p className="text-xs">CGST (9%):</p>
-                    <p className="text-xs">₹{cgstItems.toFixed(2)}</p>
+                    <p className="text-xs">Transport Charges:</p>
+                    <p className="text-xs">₹{transportCost.toFixed(2)}</p>
                   </div>
                   <div className="flex justify-between">
-                    <p className="text-xs">SGST (9%):</p>
-                    <p className="text-xs">₹{sgstItems.toFixed(2)}</p>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <p className="text-sm font-bold">Cash Part Total:</p>
-                    <p className="text-xs">₹{cashPartTotal.toFixed(2)}</p>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <p className="text-sm font-bold">Transportation Charges:</p>
-                    <p className="text-xs">
-                      ₹{totalTransportationCharges.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <p className="text-sm font-bold">Other Expenses Total:</p>
-                    <p className="text-xs">₹{totalOtherExpenses.toFixed(2)}</p>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <p className="text-sm font-bold">Purchase Amount:</p>
-                    <p className="text-xs font-bold">
-                      ₹{totalPurchaseAmount.toFixed(2)}
-                    </p>
+                    <p className="text-xs">Other Expenses:</p>
+                    <p className="text-xs">₹{otherCost.toFixed(2)}</p>
                   </div>
                   <div className="flex justify-between mt-2">
                     <p className="text-sm font-bold">Grand Total:</p>
-                    <p className="text-xs font-bold">
-                      ₹{grandTotalPurchaseAmount.toFixed(2)}
-                    </p>
+                    <p className="text-sm font-bold">₹{grandTotal.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Other Expenses & Transport */}
+        {currentStep === 4 && (
+          <div>
+            <h2 className="text-sm font-bold text-gray-900 mb-2">
+              Other Expenses & Transport
+            </h2>
+            <div className="space-y-4">
+              {/* Other Expense */}
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-700 mb-1">Other Expense</label>
+                <input
+                  type="number"
+                  placeholder="Any additional expense"
+                  ref={otherExpenseRef}
+                  value={otherExpense}
+                  onChange={(e) => setOtherExpense(e.target.value)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              {/* Transport Details (Optional) */}
+              <div>
+                <h3 className="text-xs font-bold text-gray-800 mb-1">
+                  Transport Details (Optional)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Company */}
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-700 mb-1">Company</label>
+                    <select
+                      value={transportCompany}
+                      ref={transportCompanyRef}
+                      onChange={(e) => {
+                        if (e.target.value === "add-custom") {
+                          const custom = prompt("Enter custom company name:");
+                          if (custom) {
+                            setTransportCompanies((prev) => [...prev, custom]);
+                            setTransportCompany(custom);
+                          }
+                        } else {
+                          setTransportCompany(e.target.value);
+                        }
+                        handleTransportNameChange(e);
+                      }}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                    >
+                      <option value="">No Transport</option>
+                      {transportCompanies.map((tc, i) => (
+                        <option key={i} value={tc}>
+                          {tc}
+                        </option>
+                      ))}
+                      <option value="add-custom" className="text-red-500">
+                        + Add Custom
+                      </option>
+                    </select>
+                  </div>
+                  {/* Transport Amount */}
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-700 mb-1">
+                      Transport Amount
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Transport Cost with GST"
+                      value={transportAmount}
+                      ref={transportAmountRef}
+                      onChange={(e) => setTransportAmount(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  {/* GSTIN */}
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-700 mb-1">GSTIN</label>
+                    <input
+                      type="text"
+                      placeholder="Transporter GSTIN"
+                      value={transportGst}
+                      onChange={(e) => setTransportGst(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                    />
+                  </div>
+                  {/* Bill ID */}
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-700 mb-1">Bill ID</label>
+                    <input
+                      type="text"
+                      placeholder="Transport Bill ID"
+                      value={transportBillId}
+                      onChange={(e) => setTransportBillId(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                    />
+                  </div>
+                  {/* Remark */}
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-700 mb-1">Remark</label>
+                    <input
+                      type="text"
+                      placeholder="Any remark"
+                      value={transportRemark}
+                      ref={transportRemarkRef}
+                      onChange={(e) => setTransportRemark(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional logic field */}
+              <div className="flex flex-col">
+                <label className="text-xs text-gray-700 mb-1">Logic Field</label>
+                <input
+                  type="text"
+                  placeholder="Any extra note"
+                  value={logicField}
+                  onChange={(e) => setLogicField(e.target.value)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
+                />
+              </div>
+
+              {/* Final Recap */}
+              <div className="mt-4 bg-gray-100 space-y-2 p-4 rounded-lg shadow-inner">
+                <h3 className="text-sm font-bold text-red-700 mb-2">
+                  Overall Summary
+                </h3>
+                <div className="flex justify-between">
+                  <p className="text-xs">Net Item Total:</p>
+                  <p className="text-xs">₹{netItemTotal.toFixed(2)}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xs">Total GST:</p>
+                  <p className="text-xs">₹{totalGstAmount.toFixed(2)}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xs">Transport Charges:</p>
+                  <p className="text-xs">₹{transportCost.toFixed(2)}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xs">Other Expenses:</p>
+                  <p className="text-xs">₹{otherExpense || "0"}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xs font-bold">Purchase Total:</p>
+                  <p className="text-xs font-bold">
+                    ₹{purchaseTotal.toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <p className="text-sm font-bold">Grand Total:</p>
+                  <p className="text-sm font-bold">₹{grandTotal.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Summary (Mobile Only) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-inner p-4 md:hidden">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <p className="text-xs">Net Item Total:</p>
+              <p className="text-xs">₹{netItemTotal.toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-xs">Total GST:</p>
+              <p className="text-xs">₹{totalGstAmount.toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-xs">Transport Charges:</p>
+              <p className="text-xs">₹{transportCost.toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-xs">Other Expenses:</p>
+              <p className="text-xs">₹{otherCost.toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between">
+              <p className="text-xs font-bold">Purchase Total:</p>
+              <p className="text-xs font-bold">₹{purchaseTotal.toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between mt-2">
+              <p className="text-sm font-bold">Grand Total:</p>
+              <p className="text-sm font-bold">₹{grandTotal.toFixed(2)}</p>
+            </div>
           </div>
         </div>
       </div>

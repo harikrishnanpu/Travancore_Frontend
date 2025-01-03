@@ -10,22 +10,17 @@ import OutOfStockModal from '../components/itemAddingModal';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import BillingSuccess from '../components/billingsuccess';
-import { thermalPrint } from '../actions/thermalprint';
-import PrintOptionsModal from '../components/printOptionModal';
 
 
-export default function BillingScreen() {
+export default function OrderBillScreen() {
   const navigate = useNavigate();
-
-  const [showPrintOptionsModal, setShowPrintOptionsModal] = useState(false);
-
 
   // Billing Information States
   const [invoiceNo, setInvoiceNo] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().substring(0, 10));
   const [salesmanName, setSalesmanName] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(new Date(new Date() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
-  const [deliveryStatus, setDeliveryStatus] = useState('Delivered');
+  const [deliveryStatus, setDeliveryStatus] = useState('Pending');
   const [paymentStatus, setPaymentStatus] = useState('Unpaid');
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -77,7 +72,7 @@ export default function BillingScreen() {
 
 
   // Stepper Control
-  const [step, setStep] = useState(4);
+  const [step, setStep] = useState(1);
 
   // Modal Controls
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -219,7 +214,7 @@ export default function BillingScreen() {
   
     // Provide feedback to the user
     setError('');
-    // alert('Billing data and products cleared successfully.');
+    alert('Billing data and products cleared successfully.');
     setSaveModal(false);
   };
   
@@ -318,16 +313,11 @@ export default function BillingScreen() {
         
         // Generate the next customer ID
         const lastCustomerNumber = parseInt(data.lastCustomerId.slice(3), 10) || 0; // Extract the number part after "CUS"
-        // const nextCustomer = "CUS" + (lastCustomerNumber + 1).toString().padStart(3, '0'); // Ensures at least three digitS
+        const nextCustomer = "CUS" + (lastCustomerNumber + 1).toString().padStart(3, '0'); // Ensures at least three digitS
         
 
         setLastBillId(data.lastInvoice);
-        setCustomerName("CASH");
-        setCustomerContactNumber("000");
-        setCustomerAddress("CASH");
-        setCustomerId("CUS001");
-        setSalesmanName(userInfo.name);
-        setSalesmanPhoneNumber("000")
+        setCustomerId(nextCustomer);
         setInvoiceNo(nextInvoiceNo);
       } catch (error) {
         console.error('Error fetching last bill:', error);
@@ -426,7 +416,6 @@ export default function BillingScreen() {
       setSelectedProduct(data);
       setQuantity(1);
       setItemId(data.item_id);
-      setGstRate(data.gst);
       setFetchItemPrice(data.mrp);
       const parsedActLenght = parseFloat(data.actLength)
       const parsedActBreadth = parseFloat(data.actBreadth)
@@ -546,9 +535,7 @@ const handleAddProductWithQuantity = () => {
 
   // Delete a Product from the List
   const deleteProduct = (indexToDelete) => {
-    const updatedProducts = products.filter((_, index) => index !== indexToDelete)
-    setProducts(updatedProducts);
-    localStorage.setItem('savedProducts', JSON.stringify(updatedProducts));
+    setProducts(products.filter((_, index) => index !== indexToDelete));
   };
 
   // Edit Product Details
@@ -730,14 +717,32 @@ useEffect(() => {
     
 
     try {
-      setShowPrintOptionsModal(true);
       const response = await api.post('/api/billing/create', billingData);
       console.log('Billing Response:', response.data);
-      setReturnInvoice(response.data.billingData.invoiceNo);
+      setReturnInvoice(response.data.billingData.invoiceNo)
+
+      // Reset Form Fields
+      setInvoiceNo('');
+      setInvoiceDate('');
+      setSalesmanName('');
+      setSalesmanPhoneNumber('');
+      setExpectedDeliveryDate('');
+      setDeliveryStatus('Pending');
+      setPaymentStatus('Unpaid');
+      setCustomerName('');
+      setCustomerAddress('');
+      setCustomerContactNumber('');
+      setMarketedBy('');
+      setProducts([]);
+      setDiscount(0);
+      setReceivedAmount(0);
+      setReceivedDate('');
+      setPaymentMethod();
+      setShowSummaryModal(false);
+      handleLocalClear();
 
       // Optionally, navigate to another page or show a success message
-      // setSuccess(true);
-
+      setSuccess(true);
       // navigate('/'); // Example navigation
     } catch (error) {
       console.error('Error submitting billing data:', error);
@@ -750,68 +755,6 @@ useEffect(() => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-
-  const handleThermalPrint = async () => {
-    setShowPrintOptionsModal(false); // Close the modal
-    try {
-      await thermalPrint({
-        invoiceNo,
-        invoiceDate,
-        salesmanName,
-        expectedDeliveryDate,
-        deliveryStatus,
-        paymentStatus,
-        subtotal: amountWithoutGST,
-        totalGST: gstAmount,
-        grandTotal,
-        discount,
-        paymentAmount: receivedAmount,
-        paymentMethod,
-        customerName,
-        customerAddress,
-        customerId,
-        customerContactNumber,
-        salesmanPhoneNumber,
-        marketedBy,
-        unloading,
-        transportation,
-        handlingcharge,
-        remark,
-        showroom,
-        products,
-      });
-      setSuccess(true)
-            // Reset Form Fields
-            setInvoiceNo('');
-            setInvoiceDate('');
-            setSalesmanName('');
-            setSalesmanPhoneNumber('');
-            setExpectedDeliveryDate('');
-            setDeliveryStatus('Pending');
-            setPaymentStatus('Unpaid');
-            setCustomerName('');
-            setCustomerAddress('');
-            setCustomerContactNumber('');
-            setMarketedBy('');
-            setProducts([]);
-            setDiscount(0);
-            setReceivedAmount(0);
-            setReceivedDate('');
-            setPaymentMethod();
-            setShowSummaryModal(false);
-            handleLocalClear();
-    } catch (error) {
-      console.error('Thermal Printing Failed:', error);
-      alert('Failed to print via Thermal Printer.');
-    }
-  };
-
-  // Handle Normal Print Selection
-  const handleNormalPrint = () => {
-    setShowPrintOptionsModal(false); // Close the modal
-    printInvoice(); // Existing normal print function
   };
 
   const generatePDF = async () => {
@@ -924,26 +867,6 @@ useEffect(() => {
       const printWindow = window.open('', '', 'height=800,width=600');
       printWindow.document.write(htmlContent);
       printWindow.document.close();
-      setSuccess(true);
-            // Reset Form Fields
-            setInvoiceNo('');
-            setInvoiceDate('');
-            setSalesmanName('');
-            setSalesmanPhoneNumber('');
-            setExpectedDeliveryDate('');
-            setDeliveryStatus('Pending');
-            setPaymentStatus('Unpaid');
-            setCustomerName('');
-            setCustomerAddress('');
-            setCustomerContactNumber('');
-            setMarketedBy('');
-            setProducts([]);
-            setDiscount(0);
-            setReceivedAmount(0);
-            setReceivedDate('');
-            setPaymentMethod();
-            setShowSummaryModal(false);
-            handleLocalClear();
     })
     .catch(error => {
       console.error('Error:', error);
@@ -955,9 +878,7 @@ useEffect(() => {
 
   // Handle Step Navigation
   const nextStep = () => {
-    if(step === 1){
-      setStep(step + 3);
-    }else if (step === 4) {
+ if (step === 4) {
       setShowSummaryModal(true);
     } else {
       setStep(step + 1);
@@ -965,11 +886,7 @@ useEffect(() => {
   };
 
   const prevStep = () =>{
-    if(step === 4){
-      setStep(1)
-    }else{
       setStep(step - 1);
-    }
   }
 
   // Handle Keyboard Navigation Between Fields
@@ -985,7 +902,7 @@ useEffect(() => {
       } else if (nextRef === itemQuantityRef) {
         itemQuantityRef.current?.focus();
       } else if (nextRef === salesmanNameRef || nextRef === invoiceDateRef) {
-        setStep(4);
+        setStep((prev) => prev + 1);
       } else {
         nextRef?.current?.focus();
       }
@@ -1402,13 +1319,13 @@ useEffect(() => {
               <input
                 type="datetime-local"
                 ref={expectedDeliveryDateRef}
-                value={expectedDeliveryDate}
-                onKeyDown={(e) => changeRef(e, marketedByRef)}
+                value={expectedDeliveryDate} 
+                onKeyDown={(e) => changeRef(e, deliveryStatusRef)}
                 onChange={(e) => setExpectedDeliveryDate(e.target.value)}
                 className="w-full border border-gray-300 px-3 py-2 rounded-md focus:border-red-200 focus:ring-red-500 focus:outline-none text-xs"
               />
             </div>
-
+ 
             {/* <div className="mb-4">
               <label className="block text-xs text-gray-700">
                 Marketed By:
@@ -2281,37 +2198,6 @@ useEffect(() => {
             stockRef={outofStockRef}
           />
         )}
-
-
-              {/* Print Options Modal */}
-      {showPrintOptionsModal && (
-        <PrintOptionsModal
-          onClose={() => {
-                        // Reset Form Fields
-                        setInvoiceNo('');
-                        setInvoiceDate('');
-                        setSalesmanName('');
-                        setSalesmanPhoneNumber('');
-                        setExpectedDeliveryDate('');
-                        setDeliveryStatus('Pending');
-                        setPaymentStatus('Unpaid');
-                        setCustomerName('');
-                        setCustomerAddress('');
-                        setCustomerContactNumber('');
-                        setMarketedBy('');
-                        setProducts([]);
-                        setDiscount(0);
-                        setReceivedAmount(0);
-                        setReceivedDate('');
-                        setPaymentMethod();
-                        setShowSummaryModal(false);
-                        handleLocalClear();
-            setShowPrintOptionsModal(false)
-          }}
-          onThermalPrint={handleThermalPrint}
-          onNormalPrint={handleNormalPrint}
-        />
-      )}
 
       {/* Error Message */}
       {error && (

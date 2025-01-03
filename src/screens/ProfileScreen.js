@@ -73,7 +73,7 @@ export default function ProfileScreen() {
     <div className="min-h-screen flex flex-col items-center justify-center">
       <div className='flex justify-between w-full px-6 max-w-lg'>
         <a href='/' className='font-bold text-blue-500'><i className='fa fa-angle-left' /> Back</a>
-        <h2 className='text-2xl font-bold text-red-600 '>KK TRADING</h2>
+        <h2 className='text-2xl font-bold text-red-600 '>Travancore Backers</h2>
       </div>
 
       <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 mt-6">

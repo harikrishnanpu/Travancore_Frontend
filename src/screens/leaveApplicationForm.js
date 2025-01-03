@@ -45,7 +45,7 @@ const LeaveApplicationForm = () => {
   return (
     <div className="p-4 max-w-md mx-auto">
       <div onClick={() => navigate('/')} className="text-center cursor-pointer mb-4">
-        <h2 className="text-base font-bold text-red-600">KK TRADING</h2>
+        <h2 className="text-base font-bold text-red-600">Travancore Backers</h2>
         <p className="text-gray-400 text-xs font-bold">Leave Application</p>
       </div>
 

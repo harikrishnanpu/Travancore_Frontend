@@ -136,7 +136,7 @@ export default function SearchBox() {
   <div className={`fixed inset-0 bg-white z-30 overflow-auto ${showSuggestions ? 'animate-slide-up' : 'animate-slide-down'}`}>
           {/* Mini Navbar */}
           <div className='flex py-2 px-4 justify-between'>
-            <h1 className="text-lg font-bold text-red-600">KK TRADING</h1>
+            <h1 className="text-lg font-bold text-red-600">Travancore Backers</h1>
             <button
               className="text-gray-500 text-sm hover:text-gray-700 ml-4 transition-transform transform hover:scale-105"
               onClick={() => setShowSuggestions(false)}

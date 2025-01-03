@@ -15,11 +15,11 @@
     --color-black-300: hsl(214, 21%, 6%);
     --color-black-400: hsl(210, 21%, 6%);
     --color-black-500: hsl(216, 22%, 4%);
-    --color-red-100: hsl(349, 100%, 90%);
-    --color-red-200: hsl(349, 100%, 80%);
-    --color-red-300: hsl(349, 100%, 70%);
-    --color-red-400: hsl(349, 100%, 60%);
-    --color-red-500: hsl(349, 100%, 45%);
+    --color-red-100: hsl(30, 30%, 90%);
+    --color-red-200: hsl(30, 30%, 80%);
+    --color-red-300: hsl(30, 30%, 70%);
+    --color-red-400: hsl(30, 30%, 60%);
+    --color-red-500: hsl(30, 30%, 45%);    
     --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
        0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1),

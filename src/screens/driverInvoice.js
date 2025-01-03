@@ -559,7 +559,7 @@ const DriverBillingPage = () => {
       {/* Header */}
       <div className="flex max-w-4xl mx-auto items-center justify-between bg-gradient-to-l from-gray-200 via-gray-100 to-gray-50 shadow-md p-5 rounded-lg mb-4 mt-6 relative">
         <div onClick={() => navigate("/")} className="text-center cursor-pointer">
-          <h2 className="text-md font-bold text-red-600">KK TRADING</h2>
+          <h2 className="text-md font-bold text-red-600">Travancore Backers</h2>
           <p className="text-gray-400 text-xs font-bold">Delivery & Payment Updation</p>
         </div>
         <i className="fa fa-truck text-gray-500" />
