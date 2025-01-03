@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Initialize axios instance
 const api = axios.create({
-  baseURL: 'https://travancore-backend.vercel.app/', // https://Travancore Backers-backend.vercel.app/
+  baseURL: 'http://localhost:4000/', // https://Travancore Backers-backend.vercel.app/
 });
 
 const userData = JSON.parse(localStorage.getItem('userInfo'));

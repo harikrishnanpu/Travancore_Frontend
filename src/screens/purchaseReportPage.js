@@ -18,7 +18,7 @@ const PurchaseReport = () => {
   const [invoiceNo, setInvoiceNo] = useState('');
   const [itemName, setItemName] = useState('');
   const [amountThreshold, setAmountThreshold] = useState('');
-  const [sortField, setSortField] = useState('totals.totalPurchaseAmount');
+  const [sortField, setSortField] = useState('totals.grandTotal');
   const [sortDirection, setSortDirection] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -88,7 +88,7 @@ const PurchaseReport = () => {
     // Filter by amount threshold
     if (amountThreshold) {
       filtered = filtered.filter(
-        (purchase) => purchase.totals.totalPurchaseAmount >= parseFloat(amountThreshold)
+        (purchase) => purchase.totals.grandTotal >= parseFloat(amountThreshold)
       );
     }
 
@@ -136,7 +136,7 @@ const PurchaseReport = () => {
   // Compute total amount of filtered purchases
   useEffect(() => {
     const total = filteredPurchases.reduce(
-      (sum, purchase) => sum + (purchase.totals.totalPurchaseAmount || 0),
+      (sum, purchase) => sum + (purchase.totals.grandTotal || 0),
       0
     );
     setTotalAmount(total);
@@ -177,37 +177,117 @@ const PurchaseReport = () => {
 
   const generatePDF = () => {
     const doc = new jsPDF();
-    doc.text('Purchase Report', 14, 15);
+
+    // === Add Company Logo ===
+    // const logo = 'data:image/png;base64,...'; // Replace with your Base64 logo string
+    // // Position (x, y), width, height
+    // doc.addImage(logo, 'PNG', 14, 10, 50, 20); // Adjust dimensions as needed
+
+    // === Add Company Details ===
     doc.setFontSize(12);
-    doc.text(`Date Range: ${fromDate || 'All'} to ${toDate || 'All'}`, 14, 25);
-    doc.text(`Seller Name: ${sellerName || 'All'}`, 14, 32);
-    doc.text(`Total Amount: Rs. ${totalAmount.toFixed(2)}`, 14, 39);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Travancore Backers', 70, 15);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thiruvanvandoor, Chengannur', 70, 20);
+    doc.text('Phone: 0000 | Email: info@travancorebackers.com', 70, 25);
 
+    // === Add Report Title ===
+    doc.setFontSize(16);
+    doc.text('Purchase Report', 105, 35, null, null, 'center');
+
+    // === Add Date Range and Other Filters ===
+    doc.setFontSize(12);
+    doc.text(`Date Range: ${fromDate || 'All'} to ${toDate || 'All'}`, 14, 45);
+    doc.text(`Seller Name: ${sellerName || 'All'}`, 14, 50);
+    doc.text(`Total Amount: Rs. ${totalAmount.toFixed(2)}`, 14, 55);
+
+    // === Define Table Columns ===
     const tableColumn = [
-      'Invoice No',
-      'Invoice Date',
-      'Seller Name',
-      'Total Purchase Amount',
+      { header: 'Invoice No', dataKey: 'invoiceNo' },
+      { header: 'Invoice Date', dataKey: 'invoiceDate' },
+      { header: 'Seller Name', dataKey: 'sellerName' },
+      { header: 'Grand Total (Rs.)', dataKey: 'grandTotal' },
     ];
-    const tableRows = [];
 
-    filteredPurchases.forEach((purchase) => {
-      const purchaseData = [
-        purchase.invoiceNo,
-        new Date(purchase.invoiceDate).toLocaleDateString(),
-        purchase.sellerName,
-        `Rs. ${purchase.totals.totalPurchaseAmount.toFixed(2)}`,
-      ];
-      tableRows.push(purchaseData);
-    });
+    // === Map Table Rows ===
+    const tableRows = filteredPurchases.map((purchase) => ({
+      invoiceNo: purchase.invoiceNo,
+      invoiceDate: new Date(purchase.invoiceDate).toLocaleDateString(),
+      sellerName: purchase.sellerName,
+      grandTotal: purchase.totals.grandTotal.toFixed(2),
+    }));
 
+    // === Add Table with Styling ===
     doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 45,
-      styles: { fontSize: 8 },
+      head: [tableColumn.map((col) => col.header)],
+      body: tableRows.map((row) => [
+        row.invoiceNo,
+        row.invoiceDate,
+        row.sellerName,
+        `Rs. ${row.grandTotal}`,
+      ]),
+      startY: 60,
+      styles: {
+        font: 'helvetica',
+        fontSize: 10,
+        cellPadding: 3,
+        halign: 'center',
+      },
+      headStyles: {
+        fillColor: [220, 53, 69], // Bootstrap's 'danger' color
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      columnStyles: {
+        3: { halign: 'right' }, // Align 'Grand Total' to the right
+      },
+      didDrawPage: (data) => {
+        // Footer with page number
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        const page = doc.internal.getCurrentPageInfo().pageNumber;
+        doc.text(
+          `Page ${page} of ${pageCount}`,
+          data.settings.margin.left,
+          doc.internal.pageSize.getHeight() - 10,
+          null,
+          null,
+          'left'
+        );
+      },
     });
 
+    // === Add Summary ===
+    const finalY = doc.lastAutoTable.finalY || 60;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, finalY + 10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Purchases: ${filteredPurchases.length}`, 14, finalY + 15);
+    doc.text(`Total Amount: Rs. ${totalAmount.toFixed(2)}`, 14, finalY + 20);
+
+    // === Optional: Add Transportation Details for Each Purchase ===
+    /*
+    filteredPurchases.forEach((purchase, index) => {
+      const transportDetails = purchase.transportationDetails;
+      if (transportDetails && transportDetails.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transportation Details for Invoice No: ${purchase.invoiceNo}`, 14, finalY + 30 + index * 20);
+        doc.setFont('helvetica', 'normal');
+        transportDetails.forEach((transport, tIndex) => {
+          doc.text(`Transport Company: ${transport.transportCompanyName}`, 14, finalY + 35 + index * 20 + tIndex * 5);
+          doc.text(`GST: ${transport.transportGst}`, 14, finalY + 38 + index * 20 + tIndex * 5);
+          doc.text(`Charges: Rs. ${transport.transportationCharges.toFixed(2)}`, 14, finalY + 41 + index * 20 + tIndex * 5);
+        });
+      }
+    });
+    */
+
+    // === Save the PDF ===
     doc.save('purchase_report.pdf');
   };
 
@@ -308,9 +388,7 @@ const PurchaseReport = () => {
               onChange={(e) => setSortField(e.target.value)}
               className="w-full border border-gray-300 rounded p-1 text-xs"
             >
-              <option value="totals.totalPurchaseAmount">
-                Total Purchase Amount
-              </option>
+              <option value="totals.grandTotal">Grand Total</option>
               <option value="invoiceDate">Invoice Date</option>
               <option value="sellerName">Seller Name</option>
             </select>
@@ -348,6 +426,7 @@ const PurchaseReport = () => {
       {loading ? (
         <div>
           {/* Loading skeleton can be added here if needed */}
+          <p className="text-center text-gray-500 text-xs">Loading purchases...</p>
         </div>
       ) : (
         <>
@@ -369,7 +448,7 @@ const PurchaseReport = () => {
                       <th className="px-2 py-1 text-left">Invoice No</th>
                       <th className="px-2 py-1">Invoice Date</th>
                       <th className="px-2 py-1">Seller Name</th>
-                      <th className="px-2 py-1">Total Purchase Amount</th>
+                      <th className="px-2 py-1">Grand Total (Rs.)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -383,8 +462,8 @@ const PurchaseReport = () => {
                           {new Date(purchase.invoiceDate).toLocaleDateString()}
                         </td>
                         <td className="px-2 py-1">{purchase.sellerName}</td>
-                        <td className="px-2 py-1">
-                          Rs. {purchase.totals.totalPurchaseAmount.toFixed(2)}
+                        <td className="px-2 py-1 text-right">
+                          Rs. {purchase.totals.grandTotal.toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -412,8 +491,7 @@ const PurchaseReport = () => {
                     </p>
                     <div className="flex justify-between mt-2">
                       <p className="text-gray-600 text-xs font-bold">
-                        Total Amount: Rs.{' '}
-                        {purchase.totals.totalPurchaseAmount.toFixed(2)}
+                        Grand Total: Rs. {purchase.totals.grandTotal.toFixed(2)}
                       </p>
                     </div>
                   </div>

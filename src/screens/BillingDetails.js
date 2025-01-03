@@ -1197,13 +1197,7 @@ const BillingList = () => {
                 <p className="text-sm mb-1">
                   Sub Total:{' '}
                   <span className="text-gray-600">
-                    Rs. {(parseFloat(selectedBilling.grandTotal) / 1.18).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-sm mb-1">
-                  GST (18%):{' '}
-                  <span className="text-gray-600">
-                    Rs. {(parseFloat(selectedBilling.grandTotal) - parseFloat(selectedBilling.grandTotal / 1.18)).toFixed(2)}
+                    Rs. {(parseFloat(selectedBilling.billingAmount)).toFixed(2)}
                   </span>
                 </p>
                 <p className="text-sm mb-1">

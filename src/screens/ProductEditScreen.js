@@ -454,7 +454,7 @@ export default function ProductEditScreen(props) {
               </div>
 
               {/* Size */}
-              <div className="form-group flex flex-col">
+              {/* <div className="form-group flex flex-col">
                 <label className="text-xs text-gray-500 mb-1" htmlFor="size">Size</label>
                 <input
                   type="text"
@@ -463,10 +463,10 @@ export default function ProductEditScreen(props) {
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
                 />
-              </div>
+              </div> */}
 
               {/* Unit */}
-              <div className="form-group flex flex-col">
+              {/* <div className="form-group flex flex-col">
                 <label className="text-xs text-gray-500 mb-1" htmlFor="unit">Unit</label>
                 <input
                   type="text"
@@ -475,7 +475,7 @@ export default function ProductEditScreen(props) {
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
                 />
-              </div>
+              </div> */}
 
               {/* Bill Part Price */}
               <div className="form-group flex flex-col">
